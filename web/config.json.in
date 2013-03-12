@@ -1,0 +1,49 @@
+{
+    "name"    : "SpsidGui",
+
+    "include" :
+    [
+        {
+            "path" : "${QOOXDOO_PATH}/tool/data/config/application.json"
+        }
+    ],
+
+    "export" :
+    [
+        "api",
+        "api-data",
+        "build",
+        "clean",
+        "distclean",
+        "fix",
+        "info",
+        "inspector",
+        "lint",
+        "migration",
+        "pretty",
+        "profiling",
+        "source",
+        "source-all",
+        "simulation-build",
+        "simulation-run",
+        "test",
+        "test-source",
+        "translation"
+    ],
+    
+    "default-job" : "source",
+
+    "let" :
+    {
+        "APPLICATION"  : "spsidgui",
+        "QOOXDOO_PATH" : "@QOOXDOO_SDK@",
+        "QXTHEME"      : "qx.theme.Indigo",
+        "API_EXCLUDE"  : ["qx.test.*", "${APPLICATION}.theme.*",
+                          "${APPLICATION}.test.*",
+                          "${APPLICATION}.simulation.*"],
+        "LOCALES"      : [ "en" ],
+        "CACHE"        : "@abs_frontend_builddir@/cache",
+        "ROOT"         : "."
+    }
+}
+    
