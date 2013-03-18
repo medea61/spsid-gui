@@ -36,28 +36,41 @@ qx.Class.define('spsidgui.SpsidRPC', {
                 var resp = req.getResponse();
 
                 if( resp['error'] ) {
-                    throw new Error(
+                    var errmsg = 
                         'RPC Error ' + resp['error']['code'] +
-                            ': ' + resp['error']['message']);
+                        ': ' + resp['error']['message'];
+                    
+                    console.log(errmsg);
+                    alert(errmsg);
                 }
-
-                handler(resp['result']);
+                else {
+                    handler(resp['result']);
+                }
             });
 
             req.addListener("fail", function(e) {
                 var req = e.getTarget();
+                var errmsg;
+                
                 var resp = req.getResponse();
 
-                var errmsg;
-                if( resp['error'] ) {
+                if( resp && resp['error'] ) {
                     errmsg = 
                         'RPC Error ' + resp['error']['code'] +
                         ': ' + resp['error']['message'];
+                    if( resp['error']['data'] != undefined ) {
+                        errmsg += ' -- ' + resp['error']['data'];
+                    }
                 } else {
-                    errmsg =
-                        'RPC call failed: ' + req.getStatus() +
-                        ' ' + req.getStatusText();
+                    errmsg = 'RPC call failed: ';
+                    if( req.getStatus() != undefined ) {
+                        errmsg += req.getStatus() + ' ';
+                    }
+                    if( req.getStatusText() != undefined ) {
+                        errmsg += req.getStatusText();
+                    }
                 }
+                console.log(errmsg);
                 alert(errmsg);
             });
 

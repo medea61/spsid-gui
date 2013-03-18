@@ -19,18 +19,21 @@ qx.Class.define
          },
          
          initContent : function() {
-
-             var winLayout = new qx.ui.layout.Grid(4, 4);
-             winLayout.setRowAlign(0, "left", "middle");
-             winLayout.setRowFlex(1, 1);
              
-             var winGrid = new qx.ui.container.Composite(winLayout);
+             var winVBox = new qx.ui.container.Composite(
+                 new qx.ui.layout.VBox(4));
 
-             winGrid.add(new qx.ui.basic.Label("Find"), {row: 0, column: 0});
+             var topRowLayout = new qx.ui.layout.Grid(4,4);
+             topRowLayout.setRowAlign(0, "left", "middle");
+             topRowLayout.setRowFlex(1, 1);
+             
+             var topRow = new qx.ui.container.Composite(topRowLayout);
+
+             topRow.add(new qx.ui.basic.Label("Find"), {row: 0, column: 0});
       
              var classList = this.classList = new qx.ui.form.SelectBox();
              classList.set({ width: 150 });
-             winGrid.add(classList, {row: 0, column: 1});
+             topRow.add(classList, {row: 0, column: 1});
 
              // get the list of classes for searching
              var schema = spsidgui.Application.schema;
@@ -53,7 +56,7 @@ qx.Class.define
                      null, sorted[i]));
              }
 
-             winGrid.add(new qx.ui.basic.Label("by prefix"),
+             topRow.add(new qx.ui.basic.Label("by prefix"),
                          {row: 0, column: 2});
 
              // search
@@ -71,13 +74,25 @@ qx.Class.define
              searchField.setAppearance("widget");
              searchField.setPlaceholder("type here...");
              searchComposlite.add(searchField, {flex: 1});
+             topRow.add(searchComposlite, {row: 0, column: 3});
 
+             winVBox.add(topRow);
+             
+             var resultsScroll = new qx.ui.container.Scroll();
+             var resultsComposite =
+                 new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+             resultsScroll.add(resultsComposite);
+             winVBox.add(resultsScroll, {flex: 1});
+             
              var searchTimer = qx.util.TimerManager.getInstance();
              var searchTimerId = null;             
              var statusBar = this;
              var searchField = this.searchTextField;
              var rpc = spsidgui.SpsidRPC.getInstance();
-
+             
+             statusBar.setStatus(
+                 "Type in 3 or more first letters of an attribute value");
+             
              searchField.addListener(
                  "changeValue",
                  function(e)
@@ -86,26 +101,34 @@ qx.Class.define
                      {
                          searchTimer.stop(searchTimerId);
                      }
-                     
-                     statusBar.setStatus("Searching...");
-                     
+                                          
                      searchTimerId = searchTimer.start(
                          function(userData)
                          {
                              searchTimerId = null;
-                             if( userData != null && userData.length > 0 )
+                             if( userData != null && userData.length >= 3 )
                              {
+                                 statusBar.setStatus("Searching...");
+                                 
                                  var klasses =
                                      classList.getModelSelection().toArray();
                                  
                                  rpc.search_prefix(
                                      function(result)
                                      {
+                                         resultsComposite.removeAll();
                                          statusBar.setStatus(
-                                             "Search results: " +
+                                             "Found " +
                                                  result.length + " objects");
+                                         
+                                         for (var i=0; i < result.length; i++) {
+                                             resultsComposite.add(
+                                                 new spsidgui.DisplayObject(
+                                                     result[i]));
+                                         }                                      
                                      },
                                      klasses[0],
+                                     null,
                                      userData);
                              }
                          },
@@ -115,9 +138,8 @@ qx.Class.define
                          200);
                  });                             
              
-             winGrid.add(searchComposlite, {row: 0, column: 3});
 
-             this.add(winGrid);
+             this.add(winVBox);
          }         
      }
  });
