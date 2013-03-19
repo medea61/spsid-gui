@@ -16,6 +16,7 @@ qx.Class.define
              this.setCaption('Search Objects');
              this.setShowStatusbar(true);
              this.setWidth(800);
+             this.setHeight(600);
          },
          
          initContent : function() {
@@ -58,7 +59,7 @@ qx.Class.define
 
              topRow.add(new qx.ui.basic.Label("by prefix"),
                          {row: 0, column: 2});
-
+             
              // search
              var searchComposlite = new qx.ui.container.Composite();
              searchComposlite.setLayout(new qx.ui.layout.HBox(3));
@@ -80,7 +81,7 @@ qx.Class.define
              
              var resultsScroll = new qx.ui.container.Scroll();
              var resultsComposite =
-                 new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+                 new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
              resultsScroll.add(resultsComposite);
              winVBox.add(resultsScroll, {flex: 1});
              
@@ -122,9 +123,12 @@ qx.Class.define
                                                  result.length + " objects");
                                          
                                          for (var i=0; i < result.length; i++) {
-                                             resultsComposite.add(
+                                             var d =
                                                  new spsidgui.DisplayObject(
-                                                     result[i]));
+                                                     result[i]);
+                                             // d.set({decorator:
+                                             //       'separator-vertical'});
+                                             resultsComposite.add(d);
                                          }                                      
                                      },
                                      klasses[0],
@@ -139,6 +143,16 @@ qx.Class.define
                  });                             
              
 
+             // generate a refresh if classList value is changed
+             classList.addListener(
+                 "changeSelection",
+                 function(e)
+                 {
+                     var val = searchField.getValue();
+                     searchField.fireNonBubblingEvent(
+                         "changeValue", qx.event.type.Data, [val, val]);
+                 });
+             
              this.add(winVBox);
          }         
      }
