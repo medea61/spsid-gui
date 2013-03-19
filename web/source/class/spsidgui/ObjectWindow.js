@@ -30,13 +30,14 @@ qx.Class.define
                  new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
              buttonsRow.set({backgroundColor: "#e6e6e6", padding: 4});
 
-             var disp = new spsidgui.DisplayObject(this.getObjectID());
+             var obj = new spsidgui.SpsidObject(this.getObjectID());
+             var disp = new spsidgui.DisplayObject(obj);
              disp.addControlButtons(buttonsRow);
 
              var win = this;
-             disp.addListener(
+             obj.addListener(
                  "loaded",
-                 function(e) { win.setCaption(e.getData().objectName()) });
+                 function(e) { win.setCaption(e.getTarget().getObjectName()) });
              
              box.add(buttonsRow);             
              box.add(disp);

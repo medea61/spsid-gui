@@ -3,12 +3,9 @@ qx.Class.define
  {
      extend : qx.ui.container.Composite,
 
-     construct : function(objID, attr) {
+     construct : function(obj) {
 
-         this.initObjectID(objID);
-         if( attr != undefined ) {
-             this.setAttrCache(attr);
-         }
+         this.initSpsidObject(obj);
          
          var layout = new qx.ui.layout.Grid(4, 0);
          layout.setColumnMinWidth(0, 200);
@@ -20,46 +17,16 @@ qx.Class.define
      },
      
      properties : {
-         objectID :  {
-             check: "String",
+         spsidObject :  {
+             check: "Object",
              deferredInit : true
-         },
-         attrCache : {
-             init : null,
-             nullable : true,
-             check: "Map"
-         }         
-     },
-
-     events :
-     {
-         "loaded": "qx.event.type.Data"
+         }
      },
 
      members :
      {
          objectName : function() {
-             var attr = this.getAttrCache();
-             if( attr == undefined ) {
-                 return "";
-             }
-
-             var klass = attr['spsid.object.class'];
-             var schema = spsidgui.Application.schema[klass];
-             
-             if( schema != undefined &&
-                 schema.display != undefined &&
-                 schema.display.name_attr != undefined &&
-                 attr[schema.display.name_attr] != undefined ) {
-                 
-                 return attr[schema.display.name_attr];
-             }
-
-             if( attr['spsid.object.container'] == 'NIL' ) {
-                 return "Root Object";
-             }
-             
-             return "";
+             return( this.getSpsidObject().getObjectName() );
          },
 
          addControlButtons : function(container) {
@@ -101,25 +68,19 @@ qx.Class.define
          },
          
          buildContent : function() {
-             
+
              this.removeAll();
-
-             var attr = this.getAttrCache();
-             if( attr == undefined ) {
-                 var rpc = spsidgui.SpsidRPC.getInstance();
+             
+             if( ! this.getSpsidObject().getReady() ) {
                  var myself = this;
-
-                 rpc.get_object(
-                     function(result) {
-                         myself.setAttrCache(result);
+                 this.getSpsidObject().addListener(
+                     "loaded", function(e) {
                          myself.buildContent();
-                     },
-                     this.getObjectID());
+                     });
                  return;
-             }    
-
-             this.fireDataEvent("loaded", this);
-                 
+             }
+                                                   
+             var attr = this.getSpsidObject().getAttrCache();
              var klass = attr['spsid.object.class'];
              var schema = spsidgui.Application.schema[klass];
 
@@ -151,9 +112,12 @@ qx.Class.define
              
              var nRow = 0;
              for( var i=0; i<sorted.length; i++) {
-                 this.add(new qx.ui.basic.Label(sorted[i]),
-                          {row: nRow, column: 0});
+                 var attrLabel = new qx.ui.basic.Label(sorted[i]);
+                 attrLabel.setSelectable(true);
+                 this.add(attrLabel, {row: nRow, column: 0});
+                 
                  var valLabel = new qx.ui.basic.Label(attr[sorted[i]]);
+                 valLabel.setSelectable(true);
                  if( hilite[sorted[i]] ) {
                      valLabel.set({font: "bold"});
                  }
@@ -163,7 +127,7 @@ qx.Class.define
          },
 
          refresh : function() {
-             this.setAttrCache(null);
+             this.getSpsidObject().refresh();
              this.buildContent();
          }
      }

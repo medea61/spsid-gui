@@ -46,15 +46,14 @@ qx.Class.define
                  }
              }
              
-             var sorted =
-                 filtered.sort(function(a,b) {
-                     return (schema[a].display.sequence -
-                             schema[b].display.sequence); });
+             filtered.sort(function(a,b) {
+                 return (schema[a].display.sequence -
+                         schema[b].display.sequence); });
              
-             for (var i=0; i < sorted.length; i++) {
+             for (var i=0; i < filtered.length; i++) {
                  classList.add(new qx.ui.form.ListItem(
-                     schema[sorted[i]].display.class_descr,
-                     null, sorted[i]));
+                     schema[filtered[i]].display.class_descr,
+                     null, filtered[i]));
              }
 
              topRow.add(new qx.ui.basic.Label("by prefix"),
@@ -117,7 +116,7 @@ qx.Class.define
                                          statusBar.setStatus
                                          ("Found " + result.length +
                                           " objects");
-                                         resultsWidget.setObjectList(result);
+                                         resultsWidget.setAttrList(result);
                                      },
                                      klasses[0],
                                      null,

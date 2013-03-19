@@ -46,29 +46,41 @@ qx.Class.define
              var part2 = new qx.ui.toolbar.Part();
 
              var winButton = new qx.ui.toolbar.MenuButton("Windows");
-             winButton.addListener("execute", function() {
-                 winButton.resetMenu();
+             var winMenu = new qx.ui.menu.Menu;
+             winButton.setMenu(winMenu);
+             
+             winMenu.addListener("appear", function(e) {
+                 var menu = e.getTarget();
+                 menu.removeAll();
+                     
                  var root = spsidgui.AppWindow.desktop;
                  var windows = root.getWindows().concat();
                  
-                 var menu = new qx.ui.menu.Menu;
-                 var found = false;
+                 var filtered = new Array();
                  for( var i=0; i < windows.length; i++ ) {
                      var w = windows[i];
-                     var cap = w.getCaption();
-                     if( cap ) {                         
-                         var but = new qx.ui.menu.Button(cap);
-                         but.setUserData("win", w);
-                         but.addListener("execute", function(e) {
-                             var win = e.getTarget().getUserData("win");
-                             win.setActive(true);
-                         });
-                         menu.add(but);
-                         found = true;
+                     if( w.isVisible() ) {
+                         if( w.getCaption() ) {
+                             filtered.push(w);
+                         }
                      }
                  }
-                 if( found ) {
-                     winButton.setMenu(menu);
+                 
+                 filtered.sort(
+                     function(a,b) {
+                         return(
+                             a.getCaption().localeCompare(b.getCaption()));
+                     });
+                 
+                 for(var i=0; i<filtered.length; i++) {
+                     var but = new qx.ui.menu.Button(
+                         filtered[i].getCaption());
+                     but.setUserData("win", filtered[i]);
+                     but.addListener("execute", function(e) {
+                         var win = e.getTarget().getUserData("win");
+                         win.setActive(true);
+                     });
+                     menu.add(but);
                  }
              });
              
@@ -79,7 +91,7 @@ qx.Class.define
                           
              frame.add(toolbar);
              appwindow.add(frame);
-         },
+         }
      },
 
      statics : {
