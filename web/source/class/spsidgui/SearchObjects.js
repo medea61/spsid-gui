@@ -33,7 +33,7 @@ qx.Class.define
              topRow.add(new qx.ui.basic.Label("Find"), {row: 0, column: 0});
       
              var classList = this.classList = new qx.ui.form.SelectBox();
-             classList.set({ width: 150 });
+             classList.set({ width: 200 });
              topRow.add(classList, {row: 0, column: 1});
 
              // get the list of classes for searching
@@ -78,12 +78,9 @@ qx.Class.define
              topRow.add(searchComposlite, {row: 0, column: 3});
 
              winVBox.add(topRow);
-             
-             var resultsScroll = new qx.ui.container.Scroll();
-             var resultsComposite =
-                 new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-             resultsScroll.add(resultsComposite);
-             winVBox.add(resultsScroll, {flex: 1});
+
+             var resultsWidget = new spsidgui.ObjectList();
+             winVBox.add(resultsWidget, {flex: 1});
              
              var searchTimer = qx.util.TimerManager.getInstance();
              var searchTimerId = null;             
@@ -117,19 +114,10 @@ qx.Class.define
                                  rpc.search_prefix(
                                      function(result)
                                      {
-                                         resultsComposite.removeAll();
-                                         statusBar.setStatus(
-                                             "Found " +
-                                                 result.length + " objects");
-                                         
-                                         for (var i=0; i < result.length; i++) {
-                                             var d =
-                                                 new spsidgui.DisplayObject(
-                                                     result[i]);
-                                             // d.set({decorator:
-                                             //       'separator-vertical'});
-                                             resultsComposite.add(d);
-                                         }                                      
+                                         statusBar.setStatus
+                                         ("Found " + result.length +
+                                          " objects");
+                                         resultsWidget.setObjectList(result);
                                      },
                                      klasses[0],
                                      null,
