@@ -7,6 +7,22 @@ qx.Class.define
  {
      extend : spsidgui.AppWindow,
      
+     statics :
+     {
+         _instance : null,
+         
+         openInstance : function() {
+             if( this._instance == undefined ) {
+                 var w = new spsidgui.SearchObjects;
+                 this._instance = w;
+             }
+             else {
+                 this._instance.open();
+             }
+             return(this._instance);
+         }
+     },
+
      members :
      {
          searchTextField : null,

@@ -40,7 +40,7 @@ qx.Class.define
              var searchButton =
                  new qx.ui.toolbar.Button("Search");
              searchButton.addListener("execute", function() {
-                 new spsidgui.SearchObjects(); });
+                 spsidgui.SearchObjects.openInstance(); });
              part1.add(searchButton);
 
              var part2 = new qx.ui.toolbar.Part();
@@ -51,8 +51,11 @@ qx.Class.define
              
              winMenu.addListener("appear", function(e) {
                  var menu = e.getTarget();
-                 menu.removeAll();
-                     
+                 var removed = menu.removeAll();
+                 for(var i=0; i<removed.length; i++) {
+                     removed[i].dispose();
+                 }
+                 
                  var root = spsidgui.AppWindow.desktop;
                  var windows = root.getWindows().concat();
                  

@@ -108,9 +108,7 @@ qx.Class.define('spsidgui.SpsidRPC', {
         search_objects : function(handler, container, objclass) {
 
             var args = Array.prototype.slice.call(arguments);
-            args.shift;
-            args.shift;
-            args.shift;
+            args.splice(0,3);
             
             this._call(handler,
                        'search_objects',

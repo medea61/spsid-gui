@@ -3,58 +3,73 @@ qx.Class.define
  {
      extend : qx.ui.container.Composite,
 
-     construct : function(obj) {
+     construct : function(objID) {
 
-         this.initSpsidObject(obj);
-         
+         this.initObjectID(objID);
+
          var layout = new qx.ui.layout.Grid(4, 0);
          layout.setColumnMinWidth(0, 200);
          layout.setColumnFlex(0, 1);
          layout.setColumnFlex(1, 1);
          
          this.base(arguments, layout);
+
+         var myself = this;
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         obj.addListener(
+             "loaded", function(e) {
+                 myself.buildContent();
+             });
+
          this.buildContent();
      },
      
      properties : {
-         spsidObject :  {
-             check: "Object",
+         objectID :  {
+             check: "String",
              deferredInit : true
          }
      },
 
      members :
      {
-         objectName : function() {
-             return( this.getSpsidObject().getObjectName() );
-         },
-
          addControlButtons : function(container) {
-             var disp = this;
+             
+             var objID = this.getObjectID();
              
              var refreshButton = new qx.ui.form.Button("Refresh");
+             refreshButton.setUserData("objID", objID);
              refreshButton.addListener(
-                 "execute", function() { disp.refresh() });
+                 "execute", function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     var obj = spsidgui.SpsidObject.getInstance(oid);
+                     obj.refresh();
+                 });
              container.add(refreshButton);
          
              var containerButton = new qx.ui.form.Button("Container");
+             containerButton.setUserData("objID", objID);             
              containerButton.addListener(
                  "execute",
-                 function() {
-                     var attr = disp.getAttrCache();
-                     if( attr != undefined &&
-                         attr['spsid.object.container'] != 'NIL' ) {
-                         new spsidgui.ObjectWindow(
-                             attr['spsid.object.container']);
+                 function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     var obj = spsidgui.SpsidObject.getInstance(oid);
+                     if( obj.getReady() ) {
+                         var cntr = obj.getAttr('spsid.object.container');
+                         if( cntr != undefined && cntr != 'NIL' ) {
+                             spsidgui.ObjectWindow.openInstance(cntr);
+                         }
                      }
                  });
              container.add(containerButton);
 
-             var contentButton = new qx.ui.form.Button("Contents");
+             var contentButton = new qx.ui.form.MenuButton("Content");
+             contentButton.setUserData("objID", objID);
              contentButton.addListener(
                  "execute",
-                 function() {
-                     // TODO
+                 function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     spsidgui.ContainedObjWindow.openInstance(oid);
                  });
              container.add(contentButton);
                       
@@ -69,18 +84,16 @@ qx.Class.define
          
          buildContent : function() {
 
-             this.removeAll();
+             this.clear();
              
-             if( ! this.getSpsidObject().getReady() ) {
-                 var myself = this;
-                 this.getSpsidObject().addListener(
-                     "loaded", function(e) {
-                         myself.buildContent();
-                     });
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             
+             if( ! obj.getReady() ) {
                  return;
              }
-                                                   
-             var attr = this.getSpsidObject().getAttrCache();
+
+             var attr = obj.getAttrCache();
              var klass = attr['spsid.object.class'];
              var schema = spsidgui.Application.schema[klass];
 
@@ -101,24 +114,26 @@ qx.Class.define
                  }
              }
              
-             var filtered = new Array;
+             var attrnames = new Array;
              for( var attr_name in attr ) {
                  if( ! hide[attr_name] ) {
-                     filtered.push(attr_name);
+                     attrnames.push(attr_name);
                  }
              }
              
-             var sorted = filtered.sort();         
+             attrnames.sort();         
              
              var nRow = 0;
-             for( var i=0; i<sorted.length; i++) {
-                 var attrLabel = new qx.ui.basic.Label(sorted[i]);
+             for( var i=0; i<attrnames.length; i++) {
+                 var attr_name = attrnames[i];
+                 
+                 var attrLabel = new qx.ui.basic.Label(attr_name);
                  attrLabel.setSelectable(true);
                  this.add(attrLabel, {row: nRow, column: 0});
                  
-                 var valLabel = new qx.ui.basic.Label(attr[sorted[i]]);
+                 var valLabel = new qx.ui.basic.Label(attr[attr_name]);
                  valLabel.setSelectable(true);
-                 if( hilite[sorted[i]] ) {
+                 if( hilite[attr_name] ) {
                      valLabel.set({font: "bold"});
                  }
                  this.add(valLabel, {row: nRow, column: 1});
@@ -126,9 +141,11 @@ qx.Class.define
              }             
          },
 
-         refresh : function() {
-             this.getSpsidObject().refresh();
-             this.buildContent();
+         clear : function() {
+             var removed = this.removeAll();
+             for(var i=0; i<removed.length; i++) {
+                 removed[i].dispose();
+             }
          }
      }
  });

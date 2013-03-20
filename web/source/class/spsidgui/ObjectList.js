@@ -30,7 +30,7 @@ qx.Class.define
              for (var i=0; i < list.length; i++) {
                  var attr = list[i];
                  objList.push(
-                     new spsidgui.SpsidObject(
+                     spsidgui.SpsidObject.getInstance(
                          attr['spsid.object.id'], attr));
              }
 
@@ -42,7 +42,11 @@ qx.Class.define
          },
          
          _applyObjectList : function (list) {
-             this.contentWidget.removeAll();
+             var removed = this.contentWidget.removeAll();
+             for(var i=0; i<removed.length; i++) {
+                 removed[i].dispose();
+             }
+
              if( list != undefined ) {
                  for (var i=0; i < list.length; i++) {
                      this._addObject(list[i]);
@@ -52,7 +56,8 @@ qx.Class.define
 
          _addObject : function (obj) {
 
-             var disp = new spsidgui.DisplayObject(obj);
+             var objID = obj.getObjectID();
+             var disp = new spsidgui.DisplayObject(objID);
              
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
              box.set({decorator: "inset"});
@@ -62,7 +67,7 @@ qx.Class.define
              buttonsRow.set({backgroundColor: "#e6e6e6", padding: 4});
              
              var name_label = new qx.ui.basic.Label();
-             name_label.set({decorator: "popup",
+             name_label.set({decorator: "inset",
                              font: "bold",
                              textAlign: "center",
                              minWidth: 200,
@@ -70,20 +75,23 @@ qx.Class.define
              if( obj.getReady() ) {
                  name_label.setValue(obj.getObjectName());
              }
-             else {
-                 obj.addListener(
-                     "loaded", function(e) {
-                         name_label.setValue(e.getTarget.getObjectName());
-                     });
-             }
-                         
+
+             obj.addListener(
+                 "loaded", function(e) {
+                     name_label.setValue(e.getTarget().getObjectName());
+                 });
+             
              buttonsRow.add(name_label);
              buttonsRow.add(new qx.ui.core.Spacer(30));
              
              var popupButton = new qx.ui.form.Button("Popup");
+             popupButton.setUserData("objID", objID);
+             popupButton.addListener(
+                 "execute", function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     spsidgui.ObjectWindow.openInstance(oid);
+                 });
              buttonsRow.add(popupButton);
-             popupButton.addListener("execute", function(e) {
-                 new spsidgui.ObjectWindow(obj.getObjectID())});
              
              disp.addControlButtons(buttonsRow);
              

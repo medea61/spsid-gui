@@ -6,9 +6,7 @@ qx.Class.define
      construct : function(objID, attr) {
          this.initObjectID(objID);
          if( attr != undefined ) {
-             this.setAttrCache(attr);
-             this._initObjectName();
-             this.setReady(true);
+             this.newAttrCache(attr);
          }
          else {
              this._fetchAttributes();
@@ -43,6 +41,25 @@ qx.Class.define
          "loaded": "qx.event.type.Data"
      },
 
+     statics :
+     {
+         _instances : {},
+         
+         getInstance : function(objID, attr) {
+             if( this._instances[objID] == undefined ) {
+                 var o = new spsidgui.SpsidObject(objID, attr);
+                 this._instances[objID] = o;
+                 return(o);
+             }
+             else {
+                 if( attr != undefined ) {
+                     this._instances[objID].newAttrCache(attr);
+                 }
+                 return(this._instances[objID]);
+             }
+         }
+     },
+         
      members :
      {
          _fetchAttributes : function() {
@@ -50,10 +67,7 @@ qx.Class.define
              var myself = this;
              rpc.get_object(
                  function(attr) {
-                     myself.setAttrCache(attr);
-                     myself._initObjectName();
-                     myself.setReady(true);
-                     myself.fireDataEvent("loaded");
+                     myself.newAttrCache(attr);
                  },
                  this.getObjectID());
          },
@@ -81,11 +95,27 @@ qx.Class.define
                  return;
              }
          },
+
+         newAttrCache : function(attr) {
+             this.setAttrCache(attr);
+             this._initObjectName();
+             this.setReady(true);
+             this.fireDataEvent("loaded");
+         },
+             
          
          refresh : function() {
              this.setAttrCache(null);
              this.setReady(false);
              this._fetchAttributes();
+         },
+
+         getAttr : function (name) {
+             var attr = this.getAttrCache();
+             if( attr == undefined ) {
+                 return;
+             }
+             return(attr[name]);
          }
      }
  });
