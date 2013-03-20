@@ -85,6 +85,7 @@ qx.Class.define
              var pages = this.tView.getChildren();
              for(var i=0; i<pages.length; i++) {
                  this.tView.remove(pages[i]);
+                 pages[i].destroy();
              }
              
              var myself = this;
