@@ -22,9 +22,9 @@ qx.Class.define
 
              // retrieve SPSID object schema
              var rpc = spsidgui.SpsidRPC.getInstance();
-             rpc.get_schema(function(result) {
+             rpc.get_schema(function(target, result) {
                  spsidgui.Application.schema = result;
-             });
+             }, {});
          },
 
          // Top-level toolbar         
@@ -43,6 +43,31 @@ qx.Class.define
                  spsidgui.SearchObjects.openInstance(); });
              part1.add(searchButton);
 
+             var rootButton =
+                 new qx.ui.toolbar.Button("Root");
+             rootButton.addListener("execute", function() {
+                 if( ! spsidgui.Application.schema ) {
+                     return;
+                 }
+                 
+                 for(var klass in spsidgui.Application.schema) {
+                     if( spsidgui.Application.schema[klass]['root_object'] ) {
+                         var rpc = spsidgui.SpsidRPC.getInstance();
+                         rpc.search_objects(
+                             function(target, result) {
+                                 if( result.length > 0 ) {
+                                     var oid = result[0]['spsid.object.id'];
+                                     spsidgui.ObjectWindow.openInstance(oid);
+                                 }
+                             },
+                             {},
+                             'NIL', klass);
+                     }
+                 }
+             });
+             part1.add(rootButton);
+
+             
              var part2 = new qx.ui.toolbar.Part();
 
              var winButton = new qx.ui.toolbar.MenuButton("Windows");

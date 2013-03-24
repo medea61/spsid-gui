@@ -26,7 +26,7 @@ qx.Class.define
          _instances : {},
          
          openInstance : function(objID) {
-             if( this._instances[objID] == undefined ) {
+             if( ! this._instances[objID] ) {
                  var w = new spsidgui.ObjectWindow(objID);
                  this._instances[objID] = w;
              }

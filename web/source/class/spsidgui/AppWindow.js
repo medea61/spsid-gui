@@ -21,8 +21,8 @@ qx.Class.define
          spsidgui.AppWindow.desktop.add(this, {
              left: spsidgui.AppWindow.next_window_left,
              top:  spsidgui.AppWindow.next_window_top});
-         spsidgui.AppWindow.next_window_top += 50;
-         spsidgui.AppWindow.next_window_left += 50;
+         spsidgui.AppWindow.next_window_top += 5;
+         spsidgui.AppWindow.next_window_left += 5;
 
          // let the subclass initialize the content
          this.initContent();

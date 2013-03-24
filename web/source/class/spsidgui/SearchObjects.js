@@ -12,7 +12,7 @@ qx.Class.define
          _instance : null,
          
          openInstance : function() {
-             if( this._instance == undefined ) {
+             if( ! this._instance ) {
                  var w = new spsidgui.SearchObjects;
                  this._instance = w;
              }
@@ -127,13 +127,14 @@ qx.Class.define
                                      classList.getModelSelection().toArray();
                                  
                                  rpc.search_prefix(
-                                     function(result)
+                                     function(target, result)
                                      {
                                          statusBar.setStatus
                                          ("Found " + result.length +
                                           " objects");
                                          resultsWidget.setAttrList(result);
                                      },
+                                     {},
                                      klasses[0],
                                      null,
                                      userData);
@@ -157,6 +158,7 @@ qx.Class.define
                  });
              
              this.add(winVBox);
+             searchField.focus();
          }         
      }
  });

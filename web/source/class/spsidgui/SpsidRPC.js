@@ -14,7 +14,7 @@ qx.Class.define('spsidgui.SpsidRPC', {
         _url : null,
         _next_id : 1,
 
-        _call : function(handler, methodName, args) {
+        _call : function(handler, target, methodName, args) {
 
             var req = new qx.io.request.Xhr(this._url, 'POST');
             req.setRequestHeader('Content-Type', 'application/json');
@@ -30,7 +30,7 @@ qx.Class.define('spsidgui.SpsidRPC', {
 
             req.setRequestData(qx.lang.Json.stringify(rpcData));
             req.setParser(qx.io.request.Xhr.PARSER["json"]);
-            
+            req.setUserData("SpsidRPC.target", target);
             req.addListener("success", function(e) {
                 var req = e.getTarget();
                 var resp = req.getResponse();
@@ -44,7 +44,7 @@ qx.Class.define('spsidgui.SpsidRPC', {
                     alert(errmsg);
                 }
                 else {
-                    handler(resp['result']);
+                    handler(req.getUserData("SpsidRPC.target"), resp['result']);
                 }
             });
 
@@ -79,60 +79,61 @@ qx.Class.define('spsidgui.SpsidRPC', {
             this._next_id++;            
         },
 
-        create_object : function(handler, objclass, attr) {
-            this._call(handler,
+        create_object : function(handler, target, objclass, attr) {
+            this._call(handler, target,
                        'create_object',
                        {'objclass' : objclass,
                         'attr' : attr});
         },
 
         modify_object : function(id, mod_attr) {
-            this._call(function() {},
+            this._call(function() {}, {},
                        'modify_object',
                        {'id' : id,
                         'mod_attr' : mod_attr});
         },
 
         delete_object : function(id) {
-            this._call(function() {},
+            this._call(function() {}, {},
                        'delete_object',
                        {'id' : id});
         },
 
-        get_object : function(handler, id) {
-            this._call(handler,
+        get_object : function(handler, target, id) {
+            this._call(handler, target,
                        'get_object',
                        {'id' : id});
         },
 
-        search_objects : function(handler, container, objclass) {
+        search_objects : function(handler, target, container, objclass) {
 
             var args = Array.prototype.slice.call(arguments);
-            args.splice(0,3);
+            args.splice(0,4);
             
-            this._call(handler,
+            this._call(handler, target,
                        'search_objects',
                        {'container' : container,
                         'objclass' : objclass,
                         'search_attrs' : args});
         },
 
-        search_prefix : function(handler, objclass, attr_name, attr_prefix) {
-            this._call(handler,
+        search_prefix : function(handler, target,
+                                 objclass, attr_name, attr_prefix) {
+            this._call(handler, target,
                        'search_prefix',
                        {'objclass' : objclass,
                         'attr_name' : attr_name,
                         'attr_prefix' : attr_prefix});
         },
 
-        contained_classes : function(handler, container) {
-            this._call(handler,
+        contained_classes : function(handler, target, container) {
+            this._call(handler, target,
                        'contained_classes',
                        {'container' : container});
         },
 
-        get_schema : function(handler) {
-            this._call(handler,
+        get_schema : function(handler, target) {
+            this._call(handler, target,
                        'get_schema',
                        {});
         }        

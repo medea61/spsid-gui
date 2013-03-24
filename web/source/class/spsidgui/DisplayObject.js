@@ -8,7 +8,7 @@ qx.Class.define
          this.initObjectID(objID);
 
          var layout = new qx.ui.layout.Grid(4, 0);
-         layout.setColumnMinWidth(0, 200);
+         layout.setColumnMinWidth(0, 30);
          layout.setColumnFlex(0, 1);
          layout.setColumnFlex(1, 1);
          

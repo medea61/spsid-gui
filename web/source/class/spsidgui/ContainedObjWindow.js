@@ -6,10 +6,15 @@ qx.Class.define
      construct : function(objID) {
          this.initObjectID(objID);
          this.base(arguments);
-
+         
          this.addListener('close', function(e) {
              var objID = this.getObjectID();
              delete spsidgui.ContainedObjWindow._instances[objID];
+             if( this.tView ) {
+                 this.tView.destroy();
+             }
+             this.tView = null;
+             this.tViewPages = {};
              this.destroy();
          }, this);
      },
@@ -26,7 +31,7 @@ qx.Class.define
          _instances : {},
          
          openInstance : function(objID) {
-             if( this._instances[objID] == undefined ) {
+             if( ! this._instances[objID] ) {
                  var w = new spsidgui.ContainedObjWindow(objID);
                  this._instances[objID] = w;
              }
@@ -40,6 +45,7 @@ qx.Class.define
      members :
      {
          tView : null,
+         tViewPages : {},
          
          initWindow : function() {
              this.setShowStatusbar(false);
@@ -55,7 +61,7 @@ qx.Class.define
              if( obj.getReady() ) {
                  this._initCaption(obj);
              }
-
+             
              var win = this;
              obj.addListener(
                  "loaded",
@@ -87,50 +93,71 @@ qx.Class.define
 
          refresh : function() {
              var objID = this.getObjectID();
-
-             var pages = this.tView.getChildren();
-             for(var i=0; i<pages.length; i++) {
-                 this.tView.remove(pages[i]);
-             }
              
-             var myself = this;
              var rpc = spsidgui.SpsidRPC.getInstance();
 
              rpc.contained_classes(
-                 function(result) {
+                 function(myself, result) {
                      if( result.length == 0 ) {
                          return;
                      }
+
+                     console.log(myself.getObjectID());
+                     console.log(myself.tViewPages);
                      
                      var schema = spsidgui.Application.schema;
+                     var klasses = {};
                      for(var i=0; i<result.length; i++) {
                          var klass = result[i];
                          if(schema[klass].display) {
-                             var page = new qx.ui.tabview.Page(
-                                 schema[klass].display.class_descr);
-                             myself._initPage(page, klass);
-                             myself.tView.add(page);
+                             klasses[klass] = true;
+                             if( ! myself.tViewPages[klass] ) {
+                                 myself._addPage(
+                                     klass,
+                                     schema[klass].display.class_descr);
+                             }
+                             else {
+                                 myself._refreshPage(klass);
+                             }
+                         }
+                     }
+
+                     for(var klass in myself.tViewPages) {
+                         if( ! klasses[klass] ) {
+                             myself.tView.remove(myself.tViewPages[klass]);
+                             delete myself.tViewPages[klass];
                          }
                      }
                  },
+                 this,
                  objID);
          },
 
-         
-         _initPage : function(page, klass) {
+         _addPage : function(klass, descr) {
+             var page = new qx.ui.tabview.Page(descr);
              page.setLayout(new qx.ui.layout.Grow());
              var resultsWidget = new spsidgui.ObjectList();
              page.add(resultsWidget);
-
+             page.setUserData("resultsWidget", resultsWidget);
+             this.tViewPages[klass] = page;
+             this.tView.add(page);
+             this._refreshPage(klass);
+         },
+         
+         _refreshPage : function(klass) {
              var objID = this.getObjectID();
              var rpc = spsidgui.SpsidRPC.getInstance();
-             rpc.search_objects(
-                 function(result) {
-                     resultsWidget.setAttrList(result);
-                 },
-                 objID, klass);
+             var page = this.tViewPages[klass];
+             var resultsWidget = page.getUserData("resultsWidget");
+             if( resultsWidget ) {
+                 rpc.search_objects(
+                     function(wid, result) {
+                         wid.setAttrList(result);
+                     },
+                     resultsWidget,
+                     objID, klass);
+             }
          },
-
          
          _initCaption: function(obj) {
              this.setCaption("Contents of " +

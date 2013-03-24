@@ -46,7 +46,7 @@ qx.Class.define
          _instances : {},
          
          getInstance : function(objID, attr) {
-             if( this._instances[objID] == undefined ) {
+             if( ! this._instances[objID] ) {
                  var o = new spsidgui.SpsidObject(objID, attr);
                  this._instances[objID] = o;
                  return(o);
@@ -64,11 +64,11 @@ qx.Class.define
      {
          _fetchAttributes : function() {
              var rpc = spsidgui.SpsidRPC.getInstance();
-             var myself = this;
              rpc.get_object(
-                 function(attr) {
+                 function(myself, attr) {
                      myself.newAttrCache(attr);
                  },
+                 this,
                  this.getObjectID());
          },
 
