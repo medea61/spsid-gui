@@ -31,21 +31,21 @@ qx.Class.define
          _instances : {},
          
          openInstance : function(objID) {
-             if( ! this._instances[objID] ) {
+             if( ! spsidgui.ContainedObjWindow._instances[objID] ) {
                  var w = new spsidgui.ContainedObjWindow(objID);
-                 this._instances[objID] = w;
+                 spsidgui.ContainedObjWindow._instances[objID] = w;
              }
              else {
-                 this._instances[objID].open();
+                 spsidgui.ContainedObjWindow._instances[objID].open();
              }
-             return(this._instances[objID]);
+             return(spsidgui.ContainedObjWindow._instances[objID]);
          }
      },
 
      members :
      {
          tView : null,
-         tViewPages : {},
+         tViewPages : null,
          
          initWindow : function() {
              this.setShowStatusbar(false);
@@ -85,6 +85,7 @@ qx.Class.define
              winVBox.add(buttonsRow);
 
              this.tView = new qx.ui.tabview.TabView();
+             this.tViewPages = {};
              winVBox.add(this.tView, {flex: 1});
              
              this.add(winVBox);
@@ -104,6 +105,7 @@ qx.Class.define
 
                      console.log(myself.getObjectID());
                      console.log(myself.tViewPages);
+                     console.log(spsidgui.ContainedObjWindow._instances);
                      
                      var schema = spsidgui.Application.schema;
                      var klasses = {};
@@ -124,6 +126,7 @@ qx.Class.define
 
                      for(var klass in myself.tViewPages) {
                          if( ! klasses[klass] ) {
+                             console.log("removing " + klass);
                              myself.tView.remove(myself.tViewPages[klass]);
                              delete myself.tViewPages[klass];
                          }
