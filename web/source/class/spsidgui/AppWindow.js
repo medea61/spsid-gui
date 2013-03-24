@@ -11,6 +11,7 @@ qx.Class.define
          this.setWidth(600);
          this.setShowStatusbar(false);
          this.setShowMinimize(false);
+         this.setUseMoveFrame(true);
          
          // let the subclass adjust the windo size and layout
          this.initWindow();
@@ -25,7 +26,6 @@ qx.Class.define
 
          // let the subclass initialize the content
          this.initContent();
-         
          return this;
      },
      

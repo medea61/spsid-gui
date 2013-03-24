@@ -6,6 +6,12 @@ qx.Class.define
      construct : function(objID) {
          this.initObjectID(objID);
          this.base(arguments);
+
+         this.addListener('close', function(e) {
+             var objID = this.getObjectID();
+             delete spsidgui.ContainedObjWindow._instances[objID];
+             this.destroy();
+         }, this);
      },
      
      properties : {
@@ -85,7 +91,6 @@ qx.Class.define
              var pages = this.tView.getChildren();
              for(var i=0; i<pages.length; i++) {
                  this.tView.remove(pages[i]);
-                 pages[i].destroy();
              }
              
              var myself = this;
@@ -128,7 +133,9 @@ qx.Class.define
 
          
          _initCaption: function(obj) {
-             this.setCaption("Contents of " + obj.getObjectName());
+             this.setCaption("Contents of " +
+                             obj.getAttr('spsid.object.class') + " " +
+                             obj.getObjectName());
          }
      }
  });

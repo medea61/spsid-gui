@@ -6,6 +6,12 @@ qx.Class.define
      construct : function(objID) {
          this.initObjectID(objID);
          this.base(arguments);
+         
+         this.addListener('close', function(e) {
+             var objID = this.getObjectID();
+             delete spsidgui.ObjectWindow._instances[objID];
+             this.destroy();
+         }, this);
      },
      
      properties : {

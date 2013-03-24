@@ -33,6 +33,10 @@ qx.Class.define
 
      members :
      {
+         containerButton : null,
+         contentButton : null,
+         editButton : null,
+         
          addControlButtons : function(container) {
              
              var objID = this.getObjectID();
@@ -62,8 +66,9 @@ qx.Class.define
                      }
                  });
              container.add(containerButton);
+             this.containerButton = containerButton;
 
-             var contentButton = new qx.ui.form.MenuButton("Content");
+             var contentButton = new qx.ui.form.MenuButton("Contents");
              contentButton.setUserData("objID", objID);
              contentButton.addListener(
                  "execute",
@@ -72,6 +77,7 @@ qx.Class.define
                      spsidgui.ContainedObjWindow.openInstance(oid);
                  });
              container.add(contentButton);
+             this.contentButton = contentButton;
                       
              var editButton = new qx.ui.form.Button("Edit");
              editButton.addListener(
@@ -79,7 +85,8 @@ qx.Class.define
                  function() {
                      // TODO
                  });
-             container.add(editButton);             
+             container.add(editButton);
+             this.editButton = editButton;
          },
          
          buildContent : function() {
@@ -138,7 +145,22 @@ qx.Class.define
                  }
                  this.add(valLabel, {row: nRow, column: 1});
                  nRow++;
-             }             
+             }
+
+             // disable some buttons according to schema attributes
+             if( schema != undefined ) {
+                 if( schema['root_object'] && this.containerButton ) {
+                     this.containerButton.setEnabled(false);
+                 }
+                 
+                 if( schema['no_children'] && this.contentButton ) {
+                     this.contentButton.setEnabled(false);
+                 }
+                 
+                 if( schema['read_only'] && this.editButton ) {
+                     this.editButton.setEnabled(false);
+                 }
+             }
          },
 
          clear : function() {
