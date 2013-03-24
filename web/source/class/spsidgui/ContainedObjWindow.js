@@ -103,10 +103,6 @@ qx.Class.define
                          return;
                      }
 
-                     console.log(myself.getObjectID());
-                     console.log(myself.tViewPages);
-                     console.log(spsidgui.ContainedObjWindow._instances);
-                     
                      var schema = spsidgui.Application.schema;
                      var klasses = {};
                      for(var i=0; i<result.length; i++) {
@@ -126,7 +122,6 @@ qx.Class.define
 
                      for(var klass in myself.tViewPages) {
                          if( ! klasses[klass] ) {
-                             console.log("removing " + klass);
                              myself.tView.remove(myself.tViewPages[klass]);
                              delete myself.tViewPages[klass];
                          }
