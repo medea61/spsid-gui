@@ -49,11 +49,7 @@ qx.Class.define
              
              var objID = this.getObjectID();
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
-             
-             var buttonsRow =
-                 new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-             buttonsRow.set({backgroundColor: "#e6e6e6", padding: 4});
-
+             var buttonsRow = spsidgui.Application.buttonRow();
              var disp = new spsidgui.DisplayObject(objID);
              disp.addControlButtons(buttonsRow);
 

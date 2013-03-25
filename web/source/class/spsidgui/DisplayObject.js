@@ -80,10 +80,12 @@ qx.Class.define
              this.contentButton = contentButton;
                       
              var editButton = new qx.ui.form.Button("Edit");
+             editButton.setUserData("objID", objID);
              editButton.addListener(
                  "execute",
-                 function() {
-                     // TODO
+                 function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     spsidgui.EditObject.openInstance(oid);
                  });
              container.add(editButton);
              this.editButton = editButton;
@@ -100,6 +102,61 @@ qx.Class.define
                  return;
              }
 
+             var d = spsidgui.DisplayObject.prepareForDisplay(obj);
+             
+             var nRow = 0;
+             for( var i=0; i<d.attrnames.length; i++) {
+                 var attr_name = d.attrnames[i];
+                 
+                 var attrLabel = new qx.ui.basic.Label(attr_name);
+                 attrLabel.setSelectable(true);
+
+                 if( d.tooltips[attr_name] != undefined ) {
+                     var tt = new qx.ui.tooltip.ToolTip(d.tooltips[attr_name]);
+                     attrLabel.setToolTip(tt);
+                 }
+                 
+                 this.add(attrLabel, {row: nRow, column: 0});
+                 
+                 var valLabel = new qx.ui.basic.Label(obj.getAttr(attr_name));
+                 valLabel.setSelectable(true);
+                 if( d.hilite[attr_name] ) {
+                     valLabel.set({font: "bold"});
+                 }
+                 this.add(valLabel, {row: nRow, column: 1});
+                 nRow++;
+             }
+
+             // disable some buttons according to schema attributes
+             var schema = spsidgui.Application.schema[
+                 obj.getAttr('spsid.object.class')];
+             if( schema != undefined ) {
+                 if( schema['root_object'] && this.containerButton ) {
+                     this.containerButton.setEnabled(false);
+                 }
+                 
+                 if( schema['no_children'] && this.contentButton ) {
+                     this.contentButton.setEnabled(false);
+                 }
+                 
+                 if( schema['read_only'] && this.editButton ) {
+                     this.editButton.setEnabled(false);
+                 }
+             }
+         },
+
+         clear : function() {
+             var removed = this.removeAll();
+             for(var i=0; i<removed.length; i++) {
+                 removed[i].dispose();
+             }
+         }
+     },
+
+     statics :
+     {
+         prepareForDisplay : function (obj) {
+             
              var attr = obj.getAttrCache();
              var klass = attr['spsid.object.class'];
              var schema = spsidgui.Application.schema[klass];
@@ -134,53 +191,11 @@ qx.Class.define
                      attrnames.push(attr_name);
                  }
              }
+             attrnames.sort();
              
-             attrnames.sort();         
-             
-             var nRow = 0;
-             for( var i=0; i<attrnames.length; i++) {
-                 var attr_name = attrnames[i];
-                 
-                 var attrLabel = new qx.ui.basic.Label(attr_name);
-                 attrLabel.setSelectable(true);
-
-                 if( tooltips[attr_name] != undefined ) {
-                     var tt = new qx.ui.tooltip.ToolTip(tooltips[attr_name]);
-                     attrLabel.setToolTip(tt);
-                 }
-                 
-                 this.add(attrLabel, {row: nRow, column: 0});
-                 
-                 var valLabel = new qx.ui.basic.Label(attr[attr_name]);
-                 valLabel.setSelectable(true);
-                 if( hilite[attr_name] ) {
-                     valLabel.set({font: "bold"});
-                 }
-                 this.add(valLabel, {row: nRow, column: 1});
-                 nRow++;
-             }
-
-             // disable some buttons according to schema attributes
-             if( schema != undefined ) {
-                 if( schema['root_object'] && this.containerButton ) {
-                     this.containerButton.setEnabled(false);
-                 }
-                 
-                 if( schema['no_children'] && this.contentButton ) {
-                     this.contentButton.setEnabled(false);
-                 }
-                 
-                 if( schema['read_only'] && this.editButton ) {
-                     this.editButton.setEnabled(false);
-                 }
-             }
-         },
-
-         clear : function() {
-             var removed = this.removeAll();
-             for(var i=0; i<removed.length; i++) {
-                 removed[i].dispose();
-             }
+             return({"attrnames" : attrnames,
+                     "hilite" : hilite,
+                     "tooltips" : tooltips});
          }
      }
  });

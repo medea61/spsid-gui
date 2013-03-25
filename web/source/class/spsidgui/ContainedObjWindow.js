@@ -70,10 +70,7 @@ qx.Class.define
              var winVBox = new qx.ui.container.Composite(
                  new qx.ui.layout.VBox(4));
 
-             var myself = this;
-             var buttonsRow =
-                 new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-             buttonsRow.set({backgroundColor: "#e6e6e6", padding: 4});
+             var buttonsRow = spsidgui.Application.buttonRow();
 
              var refreshButton = new qx.ui.form.Button("Refresh");
              refreshButton.setUserData("window", this);             

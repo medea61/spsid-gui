@@ -123,7 +123,14 @@ qx.Class.define
      },
 
      statics : {
-         schema : {}
+         schema : null,
+
+         buttonRow : function() {
+             var row =
+                 new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
+             row.set({backgroundColor: "#e6e6e6", padding: 4});
+             return(row);
+         }
      }
  });
 

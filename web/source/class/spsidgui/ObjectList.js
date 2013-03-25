@@ -62,9 +62,7 @@ qx.Class.define
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
              box.set({decorator: "inset"});
 
-             var buttonsRow =
-                 new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-             buttonsRow.set({backgroundColor: "#e6e6e6", padding: 4});
+             var buttonsRow = spsidgui.Application.buttonRow();
              
              var name_label = new qx.ui.basic.Label();
              name_label.set({decorator: "inset",
