@@ -8,8 +8,8 @@ qx.Class.define
          this.initObjectID(objID);
 
          var layout = new qx.ui.layout.Grid(4, 0);
-         layout.setColumnMinWidth(0, 30);
-         layout.setColumnFlex(0, 1);
+         layout.setColumnMinWidth(0, 180);
+         layout.setColumnFlex(0, 0);
          layout.setColumnFlex(1, 1);
          
          this.base(arguments, layout);
@@ -107,7 +107,8 @@ qx.Class.define
              var hide = {'spsid.object.id': 1,
                          'spsid.object.container': 1};
              var hilite = {};
-
+             var tooltips = {};
+             
              if( schema != undefined && schema.display != undefined ) {
                  
                  if( schema.display.info_attr != undefined ) {
@@ -118,6 +119,12 @@ qx.Class.define
 
                  if( schema.display.name_attr != undefined ) {
                      hilite[schema.display.name_attr] = true;
+                 }
+
+                 if( schema.display.attr_help != undefined ) {
+                     for(var name in schema.display.attr_help) {
+                         tooltips[name] = schema.display.attr_help[name];
+                     }
                  }
              }
              
@@ -136,6 +143,12 @@ qx.Class.define
                  
                  var attrLabel = new qx.ui.basic.Label(attr_name);
                  attrLabel.setSelectable(true);
+
+                 if( tooltips[attr_name] != undefined ) {
+                     var tt = new qx.ui.tooltip.ToolTip(tooltips[attr_name]);
+                     attrLabel.setToolTip(tt);
+                 }
+                 
                  this.add(attrLabel, {row: nRow, column: 0});
                  
                  var valLabel = new qx.ui.basic.Label(attr[attr_name]);
