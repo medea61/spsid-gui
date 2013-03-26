@@ -16,12 +16,23 @@ qx.Class.define
 
          var myself = this;
          var obj = spsidgui.SpsidObject.getInstance(objID);
-         obj.addListener(
-             "loaded", function(e) {
-                 myself.buildContent();
-             });
+         this.objLoadListener =
+             obj.addListener(
+                 "loaded", function(e) {
+                     this.buildContent();
+                 },
+                 this);
 
          this.buildContent();
+     },
+
+     destruct : function()
+     {
+         if( this.objLoadListener != null ) {
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             obj.removeListenerById(this.objLoadListener);             
+         }
      },
      
      properties : {
@@ -33,6 +44,7 @@ qx.Class.define
 
      members :
      {
+         objLoadListener : null,
          containerButton : null,
          contentButton : null,
          editButton : null,
@@ -68,7 +80,7 @@ qx.Class.define
              container.add(containerButton);
              this.containerButton = containerButton;
 
-             var contentButton = new qx.ui.form.MenuButton("Contents");
+             var contentButton = new qx.ui.form.Button("Contents");
              contentButton.setUserData("objID", objID);
              contentButton.addListener(
                  "execute",
@@ -89,6 +101,8 @@ qx.Class.define
                  });
              container.add(editButton);
              this.editButton = editButton;
+
+             this.updateButtons();
          },
          
          buildContent : function() {
@@ -127,9 +141,22 @@ qx.Class.define
                  nRow++;
              }
 
+             this.updateButtons();
+         },
+
+         updateButtons : function() {
              // disable some buttons according to schema attributes
+
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             
+             if( ! obj.getReady() ) {
+                 return;
+             }
+             
              var schema = spsidgui.Application.schema[
                  obj.getAttr('spsid.object.class')];
+
              if( schema != undefined ) {
                  if( schema['root_object'] && this.containerButton ) {
                      this.containerButton.setEnabled(false);
