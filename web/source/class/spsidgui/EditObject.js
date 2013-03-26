@@ -181,6 +181,6 @@ qx.Class.define
              
              this.setCaption(str);
          }
-     },
+     }
  });
 
