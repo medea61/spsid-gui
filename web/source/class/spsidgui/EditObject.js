@@ -145,6 +145,12 @@ qx.Class.define
              buttonsRow.add(saveButton);
 
              var cancelButton = new qx.ui.form.MenuButton("Cancel");
+             cancelButton.addListener(
+                 "execute",
+                 function() {
+                     this.close();
+                 },
+                 this);
              buttonsRow.add(cancelButton);
 
              buttonsRow.add(new qx.ui.core.Spacer(50));
