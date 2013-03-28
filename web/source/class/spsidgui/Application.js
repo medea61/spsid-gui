@@ -11,11 +11,7 @@ qx.Class.define
          main : function()
          {
              this.base(arguments);
-
-             qx.event.GlobalError.setErrorHandler(function(ex) {
-                 console.log(ex);
-             });
-
+             
              var root = this.getRoot();
              spsidgui.AppWindow.desktop = root;
              this.addMenuBar(root);

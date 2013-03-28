@@ -15,8 +15,10 @@ qx.Class.define
          
          // let the subclass adjust the windo size and layout
          this.initWindow();
-         
-         this.open();
+
+         if( !this.isModal() ) {
+             this.open();
+         }
          
          spsidgui.AppWindow.desktop.add(this, {
              left: spsidgui.AppWindow.next_window_left,

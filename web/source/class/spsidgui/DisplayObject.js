@@ -48,6 +48,7 @@ qx.Class.define
          containerButton : null,
          contentButton : null,
          editButton : null,
+         addButton : null,
          
          addControlButtons : function(container) {
              
@@ -64,7 +65,8 @@ qx.Class.define
              container.add(refreshButton);
          
              var containerButton = new qx.ui.form.Button("Container");
-             containerButton.setUserData("objID", objID);             
+             containerButton.setUserData("objID", objID);
+             containerButton.setEnabled(false);
              containerButton.addListener(
                  "execute",
                  function(e) {
@@ -82,6 +84,7 @@ qx.Class.define
 
              var contentButton = new qx.ui.form.Button("Contents");
              contentButton.setUserData("objID", objID);
+             contentButton.setEnabled(false);
              contentButton.addListener(
                  "execute",
                  function(e) {
@@ -93,14 +96,27 @@ qx.Class.define
                       
              var editButton = new qx.ui.form.Button("Edit");
              editButton.setUserData("objID", objID);
+             editButton.setEnabled(false);
              editButton.addListener(
                  "execute",
                  function(e) {
                      var oid = e.getTarget().getUserData("objID");
-                     spsidgui.EditObject.openInstance(oid);
+                     spsidgui.EditObject.openEditInstance(oid);
                  });
              container.add(editButton);
              this.editButton = editButton;
+
+             var addButton = new qx.ui.form.Button("Add");
+             addButton.setUserData("objID", objID);
+             addButton.setEnabled(false);
+             addButton.addListener(
+                 "execute",
+                 function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     spsidgui.EditObject.openNewObjInstance(oid);
+                 });
+             container.add(addButton);
+             this.addButton = addButton;
 
              this.updateButtons();
          },
@@ -153,21 +169,35 @@ qx.Class.define
              if( ! obj.getReady() ) {
                  return;
              }
-             
+
+             var buttons = {
+                 containerButton : true,
+                 contentButton : true,
+                 editButton : true,
+                 addButton : true
+             };             
+
              var schema = spsidgui.Application.schema[
                  obj.getAttr('spsid.object.class')];
 
              if( schema != undefined ) {
                  if( schema['root_object'] && this.containerButton ) {
-                     this.containerButton.setEnabled(false);
+                     buttons.containerButton = false;
                  }
                  
                  if( schema['no_children'] && this.contentButton ) {
-                     this.contentButton.setEnabled(false);
+                     buttons.contentButton = false;
+                     buttons.addButton = false;
                  }
                  
                  if( schema['read_only'] && this.editButton ) {
-                     this.editButton.setEnabled(false);
+                     buttons.editButton = false;
+                 }
+             }
+
+             for(var b in buttons) {
+                 if( this[b] != undefined ) {
+                     this[b].setEnabled(buttons[b]);
                  }
              }
          },
@@ -186,14 +216,39 @@ qx.Class.define
              
              var attr = obj.getAttrCache();
              var klass = attr['spsid.object.class'];
-             var schema = spsidgui.Application.schema[klass];
+             var d = {};
+             spsidgui.DisplayObject.schemaParams(klass, d);
 
              var hide = {'spsid.object.id': 1,
                          'spsid.object.container': 1};
+             
+             var attrnames = new Array;
+             for( var attr_name in attr ) {
+                 if( ! hide[attr_name] ) {
+                     attrnames.push(attr_name);
+                 }
+             }
+             attrnames.sort();
+             d["attrnames"] = attrnames;
+             
+             return(d);
+         },
+
+         schemaParams : function (klass, d) {
+             var schema = spsidgui.Application.schema[klass];
              var hilite = {};
              var tooltips = {};
+             var mandatory = {};
              
              if( schema != undefined && schema.display != undefined ) {
+                 
+                 if( schema.mandatory != undefined ) {
+                     for (var name in schema.mandatory) {
+                         if( schema.mandatory[name] ) {
+                             mandatory[name] = true;
+                         }
+                     }
+                 }
                  
                  if( schema.display.info_attr != undefined ) {
                      for (var i=0; i< schema.display.info_attr.length; i++) {
@@ -211,18 +266,12 @@ qx.Class.define
                      }
                  }
              }
-             
-             var attrnames = new Array;
-             for( var attr_name in attr ) {
-                 if( ! hide[attr_name] ) {
-                     attrnames.push(attr_name);
-                 }
-             }
-             attrnames.sort();
-             
-             return({"attrnames" : attrnames,
-                     "hilite" : hilite,
-                     "tooltips" : tooltips});
+
+             d["hilite"] = hilite;
+             d["tooltips"] = tooltips;
+             d["mandatory"] = mandatory;
+             console.log(klass);
+             console.log(d);
          }
      }
  });
