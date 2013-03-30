@@ -52,7 +52,9 @@ qx.Class.define
              else {
                  this._edit_instances[objID].open();
              }
-             
+
+             this._edit_instances[objID].setStatus(
+                 "Edit or add object attributes");
              return(this._edit_instances[objID]);
          },
 
@@ -63,14 +65,18 @@ qx.Class.define
              }
 
              var w = this._newobj_instance;
+             w.modified = false;
              w.setContainerID(containerID);
              w._populateNewObjController();
              w._clearEditZone();
              w._populateEditZone();
              w._updateCaption();
              w.open();
+             w.setStatus("Fill in the attribute values for a new object");
              return(w);
-         }
+         },
+
+         _addAttrDialogWindow : null
      },
 
      members :
@@ -84,14 +90,19 @@ qx.Class.define
          
          editedAttributes : null,
          modified : false,
-                 
+         invalidAttributes : null,
+         
+         attrDisplayProperties : null,
+
+         saveButton : null,
+         
          initWindow : function() {
              this.setShowStatusbar(true);
              this.setWidth(500);
              this.setHeight(300);
              if( this.isNewObject() ) {
-                 this.setAllowClose(false);
-                 this.setAllowMaximize(false);
+                 this.setShowClose(false);
+                 this.setShowMaximize(false);
              }
          },
          
@@ -133,16 +144,31 @@ qx.Class.define
              box.add(editZone, {flex: 1});
 
              this.editedAttributes = {};
+             this.invalidAttributes = {};
              
              var buttonsRow = spsidgui.Application.buttonRow();
 
              var addAttrButton = new qx.ui.form.MenuButton("Add Attribute");
+             addAttrButton.addListener(
+                 "execute",
+                 function() {
+                     this._onAddAttribute();
+                 },
+                 this);
              buttonsRow.add(addAttrButton);
 
              buttonsRow.add(new qx.ui.core.Spacer(50));
 
              var saveButton = new qx.ui.form.MenuButton("Save");
+             saveButton.setEnabled(false);
+             saveButton.addListener(
+                 "execute",
+                 function() {
+                     this._onSave();
+                 },
+                 this);
              buttonsRow.add(saveButton);
+             this.saveButton = saveButton;
 
              var cancelButton = new qx.ui.form.MenuButton("Cancel");
              cancelButton.addListener(
@@ -157,6 +183,15 @@ qx.Class.define
 
              if( ! this.isNewObject() ) {
                  var deleteButton = new qx.ui.form.MenuButton("Delete Object");
+                 deleteButton.addListener(
+                     "execute",
+                     function() {
+                         this._onDeleteObject();
+                     },
+                     this);
+                 
+                 deleteButton.setToolTip(new qx.ui.tooltip.ToolTip(
+                     "Delete this and all contained objects"));
                  buttonsRow.add(deleteButton);
              }
                  
@@ -218,6 +253,7 @@ qx.Class.define
                  return (schema[a].display.sequence -
                          schema[b].display.sequence); });
              this.newObjClassModel.append(klasses);
+             this.newObjClassSelectBox.setEnabled(true);
          },
 
          
@@ -248,8 +284,9 @@ qx.Class.define
                      origAttributes[attr_name] = obj.getAttr(attr_name);
                  }
              }
+
+             this.attrDisplayProperties = d;
              
-             var nRow = 0;
              var attrnames = [];
              for( var attr_name in origAttributes ) {
                  attrnames.push(attr_name);
@@ -258,63 +295,110 @@ qx.Class.define
              
              for( var i=0; i<attrnames.length; i++) {
                  var attr_name = attrnames[i];
-                 
-                 var attrLabel = new qx.ui.basic.Label(attr_name);
-                 attrLabel.setPaddingRight(10);
-                 if( d.hilite[attr_name] ) {
-                     attrLabel.set({font: "bold"});
-                 }
-                 
-                 if( d.tooltips[attr_name] != undefined ) {
-                     var tt = new qx.ui.tooltip.ToolTip(d.tooltips[attr_name]);
-                     attrLabel.setToolTip(tt);
-                 }
-                 
-                 editZone.add(attrLabel, {row: nRow, column: 0});
-
-                 var val = origAttributes[attr_name];
-                 var valEdit = new qx.ui.form.TextField(val);
-                 valEdit.setLiveUpdate(true);
-                 valEdit.setUserData("origValue", val);
-                 valEdit.setUserData("attrName", attr_name);
-                 valEdit.addListener(
-                     "changeValue",
-                     function(e)
-                     {
-                         var field = e.getTarget();
-                         var val = e.getData();
-                         var attr_name = field.getUserData("attrName");
-                         if( val != field.getUserData("origValue") ) {
-                             this.editedAttributes[attr_name] = val;
-                             field.setBackgroundColor("#f0e68c");
-                             if( ! this.modified ) {
-                                 this.modified = true;    
-                                 this._updateCaption();
-                                 if( this.isNewObject() ) {
-                                     this.newObjClassSelectBox.setEnabled(
-                                         false);
-                                 }
-                             }
-                         }
-                         else {
-                             field.resetBackgroundColor();
-                             delete this.editedAttributes[attr_name];
-                             if( Object.keys(
-                                 this.editedAttributes).length == 0 ) {
-                                 
-                                 this.modified = false;
-                                 this._updateCaption();
-                                 if( this.isNewObject() ) {
-                                     this.newObjClassSelectBox.setEnabled(true);
-                                 }
-                             }
-                         }
-                     },
-                     this);
-                 
-                 editZone.add(valEdit, {row: nRow, column: 1});
-                 nRow++;
+                 this._addAttribute(attr_name, origAttributes[attr_name]);
              }
+         },
+
+         
+         _addAttribute : function(attr_name, val) {
+             var d = this.attrDisplayProperties;
+             var editZone = this.editZone;
+             var nRow = editZone.getLayout().getRowCount();
+             
+             var attrLabel = new qx.ui.basic.Label(attr_name);
+             attrLabel.setPaddingRight(10);
+             if( d.hilite[attr_name] ) {
+                 attrLabel.set({font: "bold"});
+             }
+
+             var ttText = "";
+             if( d.mandatory[attr_name] ) {
+                 ttText += "[mandatory] ";
+             }
+             if( d.tooltips[attr_name] != undefined ) {
+                 ttText += d.tooltips[attr_name];
+             }
+
+             if( ttText != "" ) {
+                 var tt = new qx.ui.tooltip.ToolTip(ttText);
+                 attrLabel.setToolTip(tt);
+             }
+                 
+             editZone.add(attrLabel, {row: nRow, column: 0});
+             
+             var valEdit = new qx.ui.form.TextField(val);
+             valEdit.setLiveUpdate(true);
+             valEdit.setUserData("origValue", val);
+             valEdit.setUserData("attrName", attr_name);
+             if( d.mandatory[attr_name] ) {
+                 valEdit.setUserData("mandatory", true);
+             }
+             valEdit.addListener(
+                 "changeValue",
+                 function(e)
+                 {
+                     var field = e.getTarget();
+                     var val = e.getData();
+                     var attr_name = field.getUserData("attrName");
+                     if( val == "" && field.getUserData("mandatory") ) {
+                         var msg =
+                             "Must provide a value for mandatory attribute";
+                         field.setInvalidMessage(msg);
+                         field.setValid(false);
+                         this.invalidAttributes[attr_name] = true;
+                         this.setStatus(msg);
+                     }
+                     else {
+                         field.setValid(true);
+                         this.invalidAttributes[attr_name] = false;
+                         this.setStatus("");
+                     }
+                         
+                     if( val != field.getUserData("origValue") ) {
+                         this.editedAttributes[attr_name] = val;
+                         field.setBackgroundColor("#f0e68c");
+                         if( ! this.modified ) {
+                             this.modified = true;
+                             this._updateCaption();
+                             if( this.isNewObject() ) {
+                                 this.newObjClassSelectBox.setEnabled(
+                                     false);
+                             }
+                         }
+                     }
+                     else {
+                         field.resetBackgroundColor();
+                         delete this.editedAttributes[attr_name];
+                         if( Object.keys(
+                             this.editedAttributes).length == 0 ) {
+                                 
+                             this.modified = false;
+                             this._updateCaption();
+                             if( this.isNewObject() ) {
+                                 this.newObjClassSelectBox.setEnabled(true);
+                             }
+                         }
+                     }
+
+                     if( ! this.modified ) {
+                         this.saveButton.setEnabled(false);
+                     }
+                     else {
+                         var allValid = true;
+                         for(var a in this.invalidAttributes) {
+                             if( this.invalidAttributes[a] ) {
+                                 allValid = false;
+                                 break;
+                             }
+                         }
+                         this.saveButton.setEnabled(allValid);
+                     }
+                 },
+                 this);
+             
+             valEdit.fireNonBubblingEvent(
+                 "changeValue", qx.event.type.Data, [val, val]);             
+             editZone.add(valEdit, {row: nRow, column: 1});
          },
          
          _updateCaption : function() {
@@ -343,6 +427,97 @@ qx.Class.define
              }
                  
              this.setCaption(str);
+         },
+
+
+         _onAddAttribute : function() {
+             if( spsidgui.EditObject._addAttrDialogWindow == undefined ) {
+                 var dw = new spsidgui.DialogWindow('Add Attribute');
+                 spsidgui.EditObject._addAttrDialogWindow = dw;
+
+                 var gridLayout = new qx.ui.layout.Grid(6,6);
+                 gridLayout.setColumnFlex(1,1);
+                 var grid = new qx.ui.container.Composite(gridLayout);
+                 
+                 grid.add(new qx.ui.basic.Label("Attribute name:"),
+                         {row:0, column:0});
+                 var nameField = new qx.ui.form.TextField();
+                 nameField.setLiveUpdate(true);
+                 dw.setUserData("nameField", nameField);
+
+                 nameField.addListener(
+                     "changeValue",
+                     function(e)
+                     {
+                         var val = e.getData();
+                         var re = new RegExp("^[a-z][a-z0-9_.]+$");
+                         if( re.test(val) ) {
+                             this.getUserData("okButton").setEnabled(true);
+                         }
+                         else {
+                             this.getUserData("okButton").setEnabled(false);
+                         }
+                     },
+                     dw);
+
+                 var okHandler = function(w) {
+                     var dw = spsidgui.EditObject._addAttrDialogWindow;
+                     w._addAttribute(
+                         dw.getUserData("nameField").getValue(), "");
+                     w.setStatus("Attribute added");
+                     dw.close();
+                 };
+                 
+                 nameField.addListener(
+                     "keydown",
+                     function(e)
+                     {
+                         if (e.getKeyIdentifier() == "Enter") {
+                             okHandler(this);
+                         }
+                     },
+                     this);
+                 
+                 grid.add(nameField, {row:0, column:1});
+                 
+                 dw.add(grid);
+
+                 
+                 var buttonsRow = spsidgui.Application.buttonRow();
+                 
+                 var okButton = new qx.ui.form.MenuButton("OK");
+                 okButton.setEnabled(false);
+                 dw.setUserData("okButton", okButton);
+                 okButton.addListener(
+                     "execute",
+                     function() { okHandler(this) },
+                     this);
+                 buttonsRow.add(okButton);
+
+                 var cancelButton = new qx.ui.form.MenuButton("Cancel");
+                 cancelButton.addListener(
+                     "execute",
+                     function() {
+                         var dw = spsidgui.EditObject._addAttrDialogWindow;
+                         dw.close();
+                     },
+                     this);
+                 buttonsRow.add(cancelButton);
+                 
+                 dw.add(buttonsRow);
+             }
+
+             var dw = spsidgui.EditObject._addAttrDialogWindow;
+             var nameField = dw.getUserData("nameField");
+             nameField.setValue("");
+             dw.positionAndOpen(this, 400, 50);
+             nameField.focus();
+         },
+         
+         _onSave : function() {
+         },
+         
+         _onDeleteObject : function() {
          }
      }
  });

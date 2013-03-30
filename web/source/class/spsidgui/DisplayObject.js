@@ -270,8 +270,6 @@ qx.Class.define
              d["hilite"] = hilite;
              d["tooltips"] = tooltips;
              d["mandatory"] = mandatory;
-             console.log(klass);
-             console.log(d);
          }
      }
  });
