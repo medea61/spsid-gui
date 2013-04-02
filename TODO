@@ -1,0 +1,27 @@
+Delete object and all its recursive contents: need to close and refresh
+the corresponding windows.
+
+
+Display boolean attributes with checkbox:
+siam.object.complete
+snmp.managed
+
+Default values derived from other attributes:
+In SIAM::ServiceComponent,
+torrus.port.nodeid would be derived from siam.svcc.inventory_id
+
+Values derived from other objects: torrus.port.name
+
+Values from a catalog:
+siam.svc.type
+siam.svc.product_name
+
+
+Object references
+
+Prevent read-only objects from adding
+
+Display object changelog
+
+
+
