@@ -46,16 +46,16 @@ qx.Class.define
          _instances : {},
          
          getInstance : function(objID, attr) {
-             if( ! this._instances[objID] ) {
+             if( ! spsidgui.SpsidObject._instances[objID] ) {
                  var o = new spsidgui.SpsidObject(objID, attr);
-                 this._instances[objID] = o;
+                 spsidgui.SpsidObject._instances[objID] = o;
                  return(o);
              }
              else {
                  if( attr != undefined ) {
-                     this._instances[objID].newAttrCache(attr);
+                     spsidgui.SpsidObject._instances[objID].newAttrCache(attr);
                  }
-                 return(this._instances[objID]);
+                 return(spsidgui.SpsidObject._instances[objID]);
              }
          }
      },

@@ -26,14 +26,14 @@ qx.Class.define
          _instances : {},
          
          openInstance : function(objID) {
-             if( ! this._instances[objID] ) {
+             if( ! spsidgui.ObjectWindow._instances[objID] ) {
                  var w = new spsidgui.ObjectWindow(objID);
-                 this._instances[objID] = w;
+                 spsidgui.ObjectWindow._instances[objID] = w;
              }
              else {
-                 this._instances[objID].open();
+                 spsidgui.ObjectWindow._instances[objID].open();
              }
-             return(this._instances[objID]);
+             return(spsidgui.ObjectWindow._instances[objID]);
          }
      },
 
