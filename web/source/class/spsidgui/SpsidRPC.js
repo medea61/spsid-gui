@@ -69,6 +69,10 @@ qx.Class.define('spsidgui.SpsidRPC', {
                     if( req.getStatusText() != undefined ) {
                         errmsg += req.getStatusText();
                     }
+                    var rawtext = req.getResponseText();
+                    if( rawtext != undefined && rawtext.length > 0 ) {
+                        errmsg += "\n Raw message: " + rawtext;
+                    }
                 }
                 console.log(errmsg);
                 alert(errmsg);
@@ -86,15 +90,19 @@ qx.Class.define('spsidgui.SpsidRPC', {
                         'attr' : attr});
         },
 
-        modify_object : function(id, mod_attr) {
-            this._call(function() {}, {},
+        modify_object : function(handler, target, id, mod_attr) {
+            this._call(handler, target,
                        'modify_object',
                        {'id' : id,
                         'mod_attr' : mod_attr});
         },
 
-        delete_object : function(id) {
-            this._call(function() {}, {},
+        validate_object : function(handler, target, attr) {
+            this._call(handler, target, 'validate_object', {'attr' : attr});
+        },
+            
+        delete_object : function(handler, target, id) {
+            this._call(handler, target,
                        'delete_object',
                        {'id' : id});
         },

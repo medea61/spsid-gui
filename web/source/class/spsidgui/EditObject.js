@@ -15,6 +15,15 @@ qx.Class.define
          this.base(arguments);
      },
 
+     destruct : function()
+     {
+         if( this.objLoadListener != null ) {
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             obj.removeListenerById(this.objLoadListener);             
+         }
+     },
+
      properties : {
          
          newObject : {
@@ -39,23 +48,24 @@ qx.Class.define
          _newobj_instance : null,
          
          openEditInstance : function(objID) {
-             if( ! this._edit_instances[objID] ) {
+             if( spsidgui.EditObject._edit_instances[objID] == undefined ) {
                  var w = new spsidgui.EditObject(objID);
-                 this._edit_instances[objID] = w;
+                 spsidgui.EditObject._edit_instances[objID] = w;
                  
                  w.addListener('close', function(e) {
-                     var objID = this.getObjectID();
+                     var target = e.getTarget();
+                     var objID = target.getObjectID();
                      delete spsidgui.EditObject._edit_instances[objID];
-                     this.destroy();
+                     target.destroy();
                  }, w);
              }
              else {
-                 this._edit_instances[objID].open();
+                 spsidgui.EditObject._edit_instances[objID].open();
              }
 
-             this._edit_instances[objID].setStatus(
+             spsidgui.EditObject._edit_instances[objID].setStatus(
                  "Edit or add object attributes");
-             return(this._edit_instances[objID]);
+             return(spsidgui.EditObject._edit_instances[objID]);
          },
 
          openNewObjInstance : function(containerID) {
@@ -76,12 +86,14 @@ qx.Class.define
              return(w);
          },
 
-         _addAttrDialogWindow : null
+         _addAttrDialogWindow : null,
+         _validationErrorDialogWindow : null
      },
 
      members :
      {
          editZone : null,
+         objLoadListener : null,
          
          // for new objects: class selector
          newObjClassSelectBox : null,
@@ -148,7 +160,7 @@ qx.Class.define
              
              var buttonsRow = spsidgui.Application.buttonRow();
 
-             var addAttrButton = new qx.ui.form.MenuButton("Add Attribute");
+             var addAttrButton = new qx.ui.form.Button("Add Attribute");
              addAttrButton.addListener(
                  "execute",
                  function() {
@@ -159,7 +171,7 @@ qx.Class.define
 
              buttonsRow.add(new qx.ui.core.Spacer(50));
 
-             var saveButton = new qx.ui.form.MenuButton("Save");
+             var saveButton = new qx.ui.form.Button("Save");
              saveButton.setEnabled(false);
              saveButton.addListener(
                  "execute",
@@ -167,10 +179,12 @@ qx.Class.define
                      this._onSave();
                  },
                  this);
+             saveButton.setToolTip(new qx.ui.tooltip.ToolTip(
+                 "Validate and save the object"));
              buttonsRow.add(saveButton);
              this.saveButton = saveButton;
 
-             var cancelButton = new qx.ui.form.MenuButton("Cancel");
+             var cancelButton = new qx.ui.form.Button("Cancel");
              cancelButton.addListener(
                  "execute",
                  function() {
@@ -182,7 +196,7 @@ qx.Class.define
              buttonsRow.add(new qx.ui.core.Spacer(50));
 
              if( ! this.isNewObject() ) {
-                 var deleteButton = new qx.ui.form.MenuButton("Delete Object");
+                 var deleteButton = new qx.ui.form.Button("Delete Object");
                  deleteButton.addListener(
                      "execute",
                      function() {
@@ -202,7 +216,7 @@ qx.Class.define
                  var objID = this.getObjectID();
                  var obj = spsidgui.SpsidObject.getInstance(objID);
                                   
-                 obj.addListener(
+                 this.objLoadListener = obj.addListener(
                      "loaded",
                      function(e) {
                          if( ! this.modified ) {
@@ -438,6 +452,15 @@ qx.Class.define
                  var gridLayout = new qx.ui.layout.Grid(6,6);
                  gridLayout.setColumnFlex(1,1);
                  var grid = new qx.ui.container.Composite(gridLayout);
+
+                 var okHandler = function() {
+                     var dw = spsidgui.EditObject._addAttrDialogWindow;
+                     var w = dw.getUserData("editorWindow");
+                     w._addAttribute(
+                         dw.getUserData("nameField").getValue(), "");
+                     w.setStatus("Attribute added");
+                     dw.close();
+                 };
                  
                  grid.add(new qx.ui.basic.Label("Attribute name:"),
                          {row:0, column:0});
@@ -460,61 +483,166 @@ qx.Class.define
                      },
                      dw);
 
-                 var okHandler = function(w) {
-                     var dw = spsidgui.EditObject._addAttrDialogWindow;
-                     w._addAttribute(
-                         dw.getUserData("nameField").getValue(), "");
-                     w.setStatus("Attribute added");
-                     dw.close();
-                 };
-                 
                  nameField.addListener(
                      "keydown",
                      function(e)
                      {
                          if (e.getKeyIdentifier() == "Enter") {
-                             okHandler(this);
+                             okHandler();
                          }
-                     },
-                     this);
+                     });
                  
                  grid.add(nameField, {row:0, column:1});
                  
                  dw.add(grid);
-
                  
                  var buttonsRow = spsidgui.Application.buttonRow();
                  
-                 var okButton = new qx.ui.form.MenuButton("OK");
+                 var okButton = new qx.ui.form.Button("OK");
                  okButton.setEnabled(false);
                  dw.setUserData("okButton", okButton);
                  okButton.addListener(
                      "execute",
-                     function() { okHandler(this) },
-                     this);
+                     function() { okHandler() });
                  buttonsRow.add(okButton);
-
-                 var cancelButton = new qx.ui.form.MenuButton("Cancel");
+                                  
+                 var cancelButton = new qx.ui.form.Button("Cancel");
                  cancelButton.addListener(
                      "execute",
                      function() {
                          var dw = spsidgui.EditObject._addAttrDialogWindow;
                          dw.close();
-                     },
-                     this);
+                     });
                  buttonsRow.add(cancelButton);
                  
                  dw.add(buttonsRow);
              }
 
              var dw = spsidgui.EditObject._addAttrDialogWindow;
+             dw.setUserData("editorWindow", this);
              var nameField = dw.getUserData("nameField");
              nameField.setValue("");
              dw.positionAndOpen(this, 400, 50);
              nameField.focus();
          },
-         
+
+
+         _collectEditedAttributes : function (deletedAsNull) {
+
+             var attr = {};
+             if( this.isNewObject() ) {
+                 var sel = this.newObjClassController.getSelection();
+                 attr['spsid.object.class'] = sel.getItem(0);
+                 attr['spsid.object.container'] = this.getContainerID();
+             }
+             else {
+                 var objID = this.getObjectID();
+                 var obj = spsidgui.SpsidObject.getInstance(objID);
+                 var attrCache = obj.getAttrCache();
+                 for(var attr_name in attrCache) {
+                     attr[attr_name] = attrCache[attr_name];
+                 }
+             }
+
+             for(var attr_name in this.editedAttributes) {
+                 
+                 if( this.editedAttributes[attr_name] == "" &&
+                     attr[attr_name] != undefined) {
+
+                     if( deletedAsNull ) {
+                         attr[attr_name] = null;
+                     }
+                     else {
+                         delete attr[attr_name];
+                     }
+                 }
+                 else {
+                     attr[attr_name] = this.editedAttributes[attr_name];
+                 }
+             }
+
+             return(attr);
+         },
+             
+
          _onSave : function() {
+             var attr = this._collectEditedAttributes(false);
+             var rpc = spsidgui.SpsidRPC.getInstance();
+             rpc.validate_object(
+                 function(myself, result) {
+                     myself._onValidateObject(result);
+                 },
+                 this,
+                 attr);
+         },
+
+         _onValidateObject : function(result) {
+             if( result.status ) {
+                 this._saveObject();
+             }
+             else {
+                 if( spsidgui.EditObject._validationErrorDialogWindow ==
+                     undefined ) {
+                     var dw = new spsidgui.DialogWindow(
+                         'Object validation error');
+                     spsidgui.EditObject._validationErrorDialogWindow = dw;
+
+                     var msgLabel = new qx.ui.basic.Label();
+                     msgLabel.set({rich : true,
+                                   selectable : true});
+                     dw.setUserData("msgLabel", msgLabel);
+                     dw.add(msgLabel, {flex: 1});
+
+                     var buttonsRow = spsidgui.Application.buttonRow();
+                     var okButton = new qx.ui.form.Button("OK");
+                     okButton.addListener(
+                         "execute",
+                         function() { this.close() },
+                         dw);
+                     buttonsRow.add(okButton);
+                     
+                     dw.add(buttonsRow);
+                 }
+
+                 var dw = spsidgui.EditObject._validationErrorDialogWindow;
+                 var msgLabel = dw.getUserData("msgLabel");
+                 msgLabel.setValue(result.error);
+                 
+                 dw.positionAndOpen(this, 400, 50);
+             }
+         },
+
+         _saveObject : function() {
+             
+             if( this.isNewObject() ) {
+                 var attr = this._collectEditedAttributes(false);
+                 
+                 var rpc = spsidgui.SpsidRPC.getInstance();
+                 rpc.create_object(
+                     function(myself, id) {
+                         console.log("Object created: " + id);
+                         myself.close();
+                     },
+                     this,
+                     attr['spsid.object.class'], attr);
+             }
+             else {
+                 var attr = this._collectEditedAttributes(true);
+                 delete attr['spsid.object.id'];
+                 delete attr['spsid.object.class'];
+                 
+                 var rpc = spsidgui.SpsidRPC.getInstance();
+                 rpc.modify_object(
+                     function(myself) {
+                         var objID = myself.getObjectID();
+                         var obj = spsidgui.SpsidObject.getInstance(objID);
+                         console.log("Object modified: " + objID);
+                         obj.refresh();
+                         myself.close();
+                     },
+                     this,
+                     this.getObjectID(), attr);
+             }
          },
          
          _onDeleteObject : function() {
