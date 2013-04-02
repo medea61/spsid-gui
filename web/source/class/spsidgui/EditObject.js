@@ -93,7 +93,7 @@ qx.Class.define
              for(var klass in schema) {
                  if( schema[klass].display != undefined &&
                      schema[klass].display.sequence != undefined &&
-                     ! schema[klass]['read_only'] ) {
+                     ! schema[klass].display['read_only'] ) {
                      var possibleContainers = schema[klass]['contained_in'];
                      if( possibleContainers != undefined ) {
                          for(var c in possibleContainers) {

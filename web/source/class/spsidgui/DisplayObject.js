@@ -180,7 +180,8 @@ qx.Class.define
                      buttons.contentButton = false;
                  }
                  
-                 if( schema['read_only'] && this.editButton ) {
+                 if( schema.display &&
+                     schema.display['read_only'] && this.editButton ) {
                      buttons.editButton = false;
                  }
              }
