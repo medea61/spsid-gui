@@ -87,6 +87,30 @@ qx.Class.define
              return(w);
          },
 
+         classNamesForNewObject : function(containerClass) {
+             var klasses = new qx.data.Array();             
+             var schema = spsidgui.Application.schema;
+             for(var klass in schema) {
+                 if( schema[klass].display != undefined &&
+                     schema[klass].display.sequence != undefined &&
+                     ! schema[klass]['read_only'] ) {
+                     var possibleContainers = schema[klass]['contained_in'];
+                     if( possibleContainers != undefined ) {
+                         for(var c in possibleContainers) {
+                             if( possibleContainers[c] && c == containerClass ){
+                                 klasses.push(klass);
+                             }
+                         }
+                     }
+                 }
+             }
+
+             klasses.sort(function(a,b) {
+                 return (schema[a].display.sequence -
+                         schema[b].display.sequence); });
+             return(klasses);
+         },
+
          _addAttrDialogWindow : null,
          _validationErrorDialogWindow : null
      },
@@ -247,27 +271,8 @@ qx.Class.define
 
              var containerID = this.getContainerID();
              var cntr = spsidgui.SpsidObject.getInstance(containerID);
-             var containerClass = cntr.getAttr('spsid.object.class');
-
-             var klasses = new qx.data.Array();             
-             var schema = spsidgui.Application.schema;
-             for(var klass in schema) {
-                 if( schema[klass].display != undefined &&
-                     schema[klass].display.sequence != undefined ) {
-                     var possibleContainers = schema[klass]['contained_in'];
-                     if( possibleContainers != undefined ) {
-                         for(var c in possibleContainers) {
-                             if( possibleContainers[c] && c == containerClass ){
-                                 klasses.push(klass);
-                             }
-                         }
-                     }
-                 }
-             }
-
-             klasses.sort(function(a,b) {
-                 return (schema[a].display.sequence -
-                         schema[b].display.sequence); });
+             var klasses = spsidgui.EditObject.classNamesForNewObject(
+                 cntr.getAttr('spsid.object.class'));
              this.newObjClassModel.append(klasses);
              this.newObjClassSelectBox.setEnabled(true);
          },

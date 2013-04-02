@@ -92,6 +92,15 @@ qx.Class.define
                      var notify = e.getTarget().getUserData("notifyRefresh");
                      spsidgui.EditObject.openNewObjInstance(oid, notify);
                  });
+             // check if objects can be actually created within this class
+             var klasses = spsidgui.EditObject.classNamesForNewObject(
+                 obj.getAttr('spsid.object.class'));
+             if( klasses.length == 0 ) {
+                 addButton.setEnabled(false);
+             }
+             addButton.setToolTip(new qx.ui.tooltip.ToolTip(
+                 "Add a new contained object"));
+
              buttonsRow.add(addButton);
 
              var refreshButton = new qx.ui.form.Button("Refresh");
