@@ -68,7 +68,7 @@ qx.Class.define
              return(spsidgui.EditObject._edit_instances[objID]);
          },
 
-         openNewObjInstance : function(containerID) {
+         openNewObjInstance : function(containerID, notifyRefresh) {
              if( ! this._newobj_instance ) {
                  var w = new spsidgui.EditObject();
                  this._newobj_instance = w;
@@ -76,6 +76,7 @@ qx.Class.define
 
              var w = this._newobj_instance;
              w.modified = false;
+             w.notifyRefresh = notifyRefresh;
              w.setContainerID(containerID);
              w._populateNewObjController();
              w._clearEditZone();
@@ -107,6 +108,7 @@ qx.Class.define
          attrDisplayProperties : null,
 
          saveButton : null,
+         notifyRefresh : null,
          
          initWindow : function() {
              this.setShowStatusbar(true);
@@ -231,7 +233,7 @@ qx.Class.define
                  this._updateCaption();
              }
          },
-
+         
          _clearEditZone : function() {
              var removed = this.editZone.removeAll();
              for(var i=0; i<removed.length; i++) {
@@ -621,6 +623,9 @@ qx.Class.define
                  rpc.create_object(
                      function(myself, id) {
                          console.log("Object created: " + id);
+                         if( myself.notifyRefresh ) {
+                             myself.notifyRefresh.refresh();
+                         }                             
                          myself.close();
                      },
                      this,
@@ -638,6 +643,9 @@ qx.Class.define
                          var obj = spsidgui.SpsidObject.getInstance(objID);
                          console.log("Object modified: " + objID);
                          obj.refresh();
+                         if( myself.notifyRefresh ) {
+                             myself.notifyRefresh.refresh();
+                         }                             
                          myself.close();
                      },
                      this,

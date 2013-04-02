@@ -52,6 +52,7 @@ qx.Class.define
              var buttonsRow = spsidgui.Application.buttonRow();
              var disp = new spsidgui.DisplayObject(objID);
              disp.addControlButtons(buttonsRow);
+             disp.buildContent();
 
              var obj = spsidgui.SpsidObject.getInstance(objID);
              if( obj.getReady() ) {

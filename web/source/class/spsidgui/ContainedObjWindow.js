@@ -19,6 +19,15 @@ qx.Class.define
          }, this);
      },
      
+     destruct : function()
+     {
+         if( this.objLoadListener != null ) {
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             obj.removeListenerById(this.objLoadListener);             
+         }
+     },
+
      properties : {
          objectID :  {
              check: "String",
@@ -44,6 +53,7 @@ qx.Class.define
 
      members :
      {
+         objLoadListener : null,
          tView : null,
          tViewPages : null,
          
@@ -62,15 +72,27 @@ qx.Class.define
                  this._initCaption(obj);
              }
              
-             var win = this;
-             obj.addListener(
+             this.objLoadListener = obj.addListener(
                  "loaded",
-                 function(e) { win._initCaption(e.getTarget()) });
+                 function(e) { this._initCaption(e.getTarget()) },
+                 this);
 
              var winVBox = new qx.ui.container.Composite(
                  new qx.ui.layout.VBox(4));
 
              var buttonsRow = spsidgui.Application.buttonRow();
+
+             var addButton = new qx.ui.form.Button("Add");
+             addButton.setUserData("objID", objID);
+             addButton.setUserData("notifyRefresh", this);
+             addButton.addListener(
+                 "execute",
+                 function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     var notify = e.getTarget().getUserData("notifyRefresh");
+                     spsidgui.EditObject.openNewObjInstance(oid, notify);
+                 });
+             buttonsRow.add(addButton);
 
              var refreshButton = new qx.ui.form.Button("Refresh");
              refreshButton.setUserData("window", this);             

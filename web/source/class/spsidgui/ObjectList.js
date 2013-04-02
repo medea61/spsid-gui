@@ -70,14 +70,7 @@ qx.Class.define
                              textAlign: "center",
                              minWidth: 200,
                              selectable: true});
-             if( obj.getReady() ) {
-                 name_label.setValue(obj.getObjectName());
-             }
-
-             obj.addListener(
-                 "loaded", function(e) {
-                     name_label.setValue(e.getTarget().getObjectName());
-                 });
+             disp.setNameLabel(name_label);            
              
              buttonsRow.add(name_label);
              buttonsRow.add(new qx.ui.core.Spacer(30));
@@ -92,6 +85,7 @@ qx.Class.define
              buttonsRow.add(popupButton);
              
              disp.addControlButtons(buttonsRow);
+             disp.buildContent();
              
              box.add(buttonsRow);             
              box.add(disp);

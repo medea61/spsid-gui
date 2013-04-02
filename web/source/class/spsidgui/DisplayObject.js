@@ -22,8 +22,6 @@ qx.Class.define
                      this.buildContent();
                  },
                  this);
-
-         this.buildContent();
      },
 
      destruct : function()
@@ -39,7 +37,12 @@ qx.Class.define
          objectID :  {
              check: "String",
              deferredInit : true
-         }
+         },
+
+         nameLabel : {
+             check : Object,
+             nullable : true
+         }         
      },
 
      members :
@@ -48,7 +51,6 @@ qx.Class.define
          containerButton : null,
          contentButton : null,
          editButton : null,
-         addButton : null,
          
          addControlButtons : function(container) {
              
@@ -105,20 +107,6 @@ qx.Class.define
                  });
              container.add(editButton);
              this.editButton = editButton;
-
-             var addButton = new qx.ui.form.Button("Add");
-             addButton.setUserData("objID", objID);
-             addButton.setEnabled(false);
-             addButton.addListener(
-                 "execute",
-                 function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     spsidgui.EditObject.openNewObjInstance(oid);
-                 });
-             container.add(addButton);
-             this.addButton = addButton;
-
-             this.updateButtons();
          },
          
          buildContent : function() {
@@ -158,6 +146,10 @@ qx.Class.define
              }
 
              this.updateButtons();
+
+             if( this.getNameLabel() ) {
+                 this.getNameLabel().setValue(obj.getObjectName());
+             }
          },
 
          updateButtons : function() {
@@ -173,8 +165,7 @@ qx.Class.define
              var buttons = {
                  containerButton : true,
                  contentButton : true,
-                 editButton : true,
-                 addButton : true
+                 editButton : true
              };             
 
              var schema = spsidgui.Application.schema[
@@ -187,7 +178,6 @@ qx.Class.define
                  
                  if( schema['no_children'] && this.contentButton ) {
                      buttons.contentButton = false;
-                     buttons.addButton = false;
                  }
                  
                  if( schema['read_only'] && this.editButton ) {
