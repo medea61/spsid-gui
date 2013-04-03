@@ -135,8 +135,17 @@ qx.Class.define
                  }
                  
                  this.add(attrLabel, {row: nRow, column: 0});
-                 
-                 var valLabel = new qx.ui.basic.Label(obj.getAttr(attr_name));
+
+                 var val = obj.getAttr(attr_name);
+                 if( d.isboolean[attr_name] ) {
+                     if( val === "1" ) {
+                         val = "true";
+                     }
+                     else {
+                         val = "false";
+                     }
+                 }
+                 var valLabel = new qx.ui.basic.Label(val);
                  valLabel.setSelectable(true);
                  if( d.hilite[attr_name] ) {
                      valLabel.set({font: "bold"});
@@ -211,7 +220,8 @@ qx.Class.define
              spsidgui.DisplayObject.schemaParams(klass, d);
 
              var hide = {'spsid.object.id': 1,
-                         'spsid.object.container': 1};
+                         'spsid.object.container': 1,
+                         'spsid.object.class' : 1};
              
              var attrnames = new Array;
              for( var attr_name in attr ) {
@@ -230,6 +240,8 @@ qx.Class.define
              var hilite = {};
              var tooltips = {};
              var mandatory = {};
+             var boolean_attr = {};
+             var default_val = {};
              
              if( schema != undefined && schema.display != undefined ) {
                  
@@ -256,11 +268,27 @@ qx.Class.define
                          tooltips[name] = schema.display.attr_help[name];
                      }
                  }
+                 
+                 if( schema.display['boolean'] != undefined ) {
+                     for(var name in schema.display['boolean']) {
+                         if( schema.display['boolean'][name] ) {
+                             boolean_attr[name] = true;
+                         }
+                     }
+                 }
+                 
+                 if( schema.display['default'] != undefined ) {
+                     for(var name in schema.display['default']) {
+                         default_val[name] = schema.display['default'][name];
+                     }
+                 }
              }
 
              d["hilite"] = hilite;
              d["tooltips"] = tooltips;
              d["mandatory"] = mandatory;
+             d["isboolean"] = boolean_attr;
+             d["defaultval"] = default_val;
          }
      }
  });

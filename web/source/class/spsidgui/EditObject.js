@@ -291,7 +291,13 @@ qx.Class.define
                  spsidgui.DisplayObject.schemaParams(sel.getItem(0), d);
                  for(var key in d) {
                      for(var attr_name in d[key]) {
-                         origAttributes[attr_name] = "";
+                         if( d.defaultval[attr_name] != undefined ) {
+                             origAttributes[attr_name] =
+                                 d.defaultval[attr_name];
+                         }
+                         else {
+                             origAttributes[attr_name] = "";
+                         }
                      }
                  }
              }
@@ -347,79 +353,106 @@ qx.Class.define
                  
              editZone.add(attrLabel, {row: nRow, column: 0});
              
-             var valEdit = new qx.ui.form.TextField(val);
-             valEdit.setLiveUpdate(true);
-             valEdit.setUserData("origValue", val);
-             valEdit.setUserData("attrName", attr_name);
-             if( d.mandatory[attr_name] ) {
-                 valEdit.setUserData("mandatory", true);
+             var valWidget;
+             if( d.isboolean[attr_name] ) {
+                 valWidget = new qx.ui.form.CheckBox();
+                 valWidget.setValue(val === "1" ? true:false);
              }
-             valEdit.addListener(
-                 "changeValue",
-                 function(e)
-                 {
-                     var field = e.getTarget();
-                     var val = e.getData();
-                     var attr_name = field.getUserData("attrName");
-                     if( val == "" && field.getUserData("mandatory") ) {
-                         var msg =
-                             "Must provide a value for mandatory attribute";
-                         field.setInvalidMessage(msg);
-                         field.setValid(false);
-                         this.invalidAttributes[attr_name] = true;
-                         this.setStatus(msg);
-                     }
-                     else {
-                         field.setValid(true);
-                         this.invalidAttributes[attr_name] = false;
-                         this.setStatus("");
-                     }
-                         
-                     if( val != field.getUserData("origValue") ) {
-                         this.editedAttributes[attr_name] = val;
-                         field.setBackgroundColor("#f0e68c");
-                         if( ! this.modified ) {
-                             this.modified = true;
-                             this._updateCaption();
-                             if( this.isNewObject() ) {
-                                 this.newObjClassSelectBox.setEnabled(
-                                     false);
-                             }
-                         }
-                     }
-                     else {
-                         field.resetBackgroundColor();
-                         delete this.editedAttributes[attr_name];
-                         if( Object.keys(
-                             this.editedAttributes).length == 0 ) {
-                                 
-                             this.modified = false;
-                             this._updateCaption();
-                             if( this.isNewObject() ) {
-                                 this.newObjClassSelectBox.setEnabled(true);
-                             }
-                         }
-                     }
+             else {
+                 valWidget = new qx.ui.form.TextField(val);
+                 valWidget.setLiveUpdate(true);
+                 if( d.mandatory[attr_name] ) {
+                     valWidget.setUserData("mandatory", true);
+                 }
+             }
 
-                     if( ! this.modified ) {
-                         this.saveButton.setEnabled(false);
-                     }
-                     else {
-                         var allValid = true;
-                         for(var a in this.invalidAttributes) {
-                             if( this.invalidAttributes[a] ) {
-                                 allValid = false;
-                                 break;
-                             }
-                         }
-                         this.saveButton.setEnabled(allValid);
-                     }
-                 },
-                 this);
+             valWidget.setUserData("origValue", val);
+             valWidget.setUserData("attrName", attr_name);
              
-             valEdit.fireNonBubblingEvent(
-                 "changeValue", qx.event.type.Data, [val, val]);             
-             editZone.add(valEdit, {row: nRow, column: 1});
+             if( d.isboolean[attr_name] ) {
+                 valWidget.addListener(
+                     "changeValue",
+                     function(e)
+                     {
+                         var field = e.getTarget();
+                         var val = (e.getData() ? "1":"0");
+                         this._fieldValueChanged(val, field);
+                     },
+                     this);
+             }
+             else {
+                 valWidget.addListener(
+                     "changeValue",
+                     function(e)
+                     {
+                         var field = e.getTarget();
+                         var val = e.getData();
+                         var attr_name = field.getUserData("attrName");
+                         if( val == "" && field.getUserData("mandatory") ) {
+                             var msg =
+                                 "Must provide a value for mandatory attribute";
+                             field.setInvalidMessage(msg);
+                             field.setValid(false);
+                             this.invalidAttributes[attr_name] = true;
+                             this.setStatus(msg);
+                         }
+                         else {
+                             field.setValid(true);
+                             this.invalidAttributes[attr_name] = false;
+                             this.setStatus("");
+                         }
+                         
+                         this._fieldValueChanged(val, field);
+                     },
+                     this);
+             
+                 valWidget.fireNonBubblingEvent(
+                     "changeValue", qx.event.type.Data, [val, val]);
+             }
+                 
+             editZone.add(valWidget, {row: nRow, column: 1});
+         },
+
+         _fieldValueChanged : function(val, widget) {
+             var attr_name = widget.getUserData("attrName");
+             if( val != widget.getUserData("origValue") ) {
+                 this.editedAttributes[attr_name] = val;
+                 widget.setBackgroundColor("#f0e68c");
+                 if( ! this.modified ) {
+                     this.modified = true;
+                     this._updateCaption();
+                     if( this.isNewObject() ) {
+                         this.newObjClassSelectBox.setEnabled(
+                             false);
+                     }
+                 }
+             }
+             else {
+                 widget.resetBackgroundColor();
+                 delete this.editedAttributes[attr_name];
+                 if( Object.keys(
+                     this.editedAttributes).length == 0 ) {
+                     this.modified = false;
+                     this._updateCaption();
+                     if( this.isNewObject() ) {
+                         this.newObjClassSelectBox.setEnabled(true);
+                     }
+                 }
+             }
+             
+             if( ! this.modified ) {
+                 this.saveButton.setEnabled(false);
+             }
+             else {
+                 var allValid = true;
+                 for(var a in this.invalidAttributes) {
+                     if( this.invalidAttributes[a] ) {
+                         allValid = false;
+                         break;
+                     }
+                 }
+                 this.saveButton.setEnabled(allValid);
+             }
          },
          
          _updateCaption : function() {
@@ -553,7 +586,7 @@ qx.Class.define
 
              for(var attr_name in this.editedAttributes) {
                  
-                 if( this.editedAttributes[attr_name] == "" &&
+                 if( this.editedAttributes[attr_name] === "" &&
                      attr[attr_name] != undefined) {
 
                      if( deletedAsNull ) {
