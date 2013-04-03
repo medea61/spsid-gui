@@ -195,6 +195,11 @@ qx.Class.define
                  }
              }
 
+             var v = obj.getAttr('spsid_gui.edit.locked');
+             if( v != undefined && v != 0 ) {
+                 buttons.editButton = false;
+             }
+
              for(var b in buttons) {
                  if( this[b] != undefined ) {
                      this[b].setEnabled(buttons[b]);
