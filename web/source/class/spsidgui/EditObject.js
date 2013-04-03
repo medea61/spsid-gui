@@ -355,6 +355,7 @@ qx.Class.define
              
              var valWidget;
              if( d.isboolean[attr_name] ) {
+                 val = (val == 0 ? "0":"1");
                  valWidget = new qx.ui.form.CheckBox();
                  valWidget.setValue(val === "1" ? true:false);
              }
