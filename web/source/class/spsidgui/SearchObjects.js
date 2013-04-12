@@ -6,20 +6,20 @@ qx.Class.define
 ("spsidgui.SearchObjects",
  {
      extend : spsidgui.AppWindow,
-     
+
      statics :
      {
          _instance : null,
          
          openInstance : function() {
-             if( ! this._instance ) {
+             if( ! spsidgui.SearchObjects._instance ) {
                  var w = new spsidgui.SearchObjects;
-                 this._instance = w;
+                 spsidgui.SearchObjects._instance = w;
              }
              else {
-                 this._instance.open();
+                 spsidgui.SearchObjects._instance.open();
              }
-             return(this._instance);
+             return(spsidgui.SearchObjects._instance);
          }
      },
 
@@ -71,7 +71,7 @@ qx.Class.define
                      schema[filtered[i]].display.class_descr,
                      null, filtered[i]));
              }
-
+             
              topRow.add(new qx.ui.basic.Label("by prefix"),
                          {row: 0, column: 2});
              

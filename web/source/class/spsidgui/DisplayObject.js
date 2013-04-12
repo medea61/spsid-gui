@@ -127,7 +127,8 @@ qx.Class.define
                  var attr_name = d.attrnames[i];
                  
                  var attrLabel = new qx.ui.basic.Label(attr_name);
-                 attrLabel.setSelectable(true);
+                 attrLabel.set({selectable : true,
+                                paddingLeft: 5});
 
                  if( d.tooltips[attr_name] != undefined ) {
                      var tt = new qx.ui.tooltip.ToolTip(d.tooltips[attr_name]);
@@ -137,7 +138,8 @@ qx.Class.define
                  this.add(attrLabel, {row: nRow, column: 0});
 
                  var val = obj.getAttr(attr_name);
-                 if( d.isboolean[attr_name] ) {
+                 
+                 if( d.is_boolean[attr_name] ) {
                      if( val === "1" ) {
                          val = "true";
                      }
@@ -145,11 +147,21 @@ qx.Class.define
                          val = "false";
                      }
                  }
-                 var valLabel = new qx.ui.basic.Label(val);
+                 
+                 var valLabel;
+                 if ( d.is_objref[attr_name] ) {
+                     valLabel = new spsidgui.ObjectRefWidget();
+                     valLabel.setObjectID(val);
+                 }
+                 else {
+                     valLabel = new qx.ui.basic.Label(val);
+                 }
+                 
                  valLabel.setSelectable(true);
                  if( d.hilite[attr_name] ) {
                      valLabel.set({font: "bold"});
                  }
+                 
                  this.add(valLabel, {row: nRow, column: 1});
                  nRow++;
              }
@@ -245,8 +257,10 @@ qx.Class.define
              var hilite = {};
              var tooltips = {};
              var mandatory = {};
-             var boolean_attr = {};
+             var is_boolean = {};
              var default_val = {};
+             var is_objref = {};
+             var objref_class = {};
              
              if( schema != undefined && schema.display != undefined ) {
                  
@@ -277,7 +291,7 @@ qx.Class.define
                  if( schema.display['boolean'] != undefined ) {
                      for(var name in schema.display['boolean']) {
                          if( schema.display['boolean'][name] ) {
-                             boolean_attr[name] = true;
+                             is_boolean[name] = true;
                          }
                      }
                  }
@@ -287,13 +301,22 @@ qx.Class.define
                          default_val[name] = schema.display['default'][name];
                      }
                  }
+
+                 if( schema.object_ref != undefined ) {
+                     for(var name in schema.object_ref) {
+                         is_objref[name] = true;
+                         objref_class[name] = schema.object_ref[name];
+                     }
+                 }
              }
 
              d["hilite"] = hilite;
              d["tooltips"] = tooltips;
              d["mandatory"] = mandatory;
-             d["isboolean"] = boolean_attr;
-             d["defaultval"] = default_val;
+             d["is_boolean"] = is_boolean;
+             d["default_val"] = default_val;
+             d["is_objref"] = is_objref;
+             d["objref_class"] = objref_class;
          }
      }
  });

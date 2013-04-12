@@ -69,12 +69,12 @@ qx.Class.define
          },
 
          openNewObjInstance : function(containerID, notifyRefresh) {
-             if( ! this._newobj_instance ) {
+             if( ! spsidgui.EditObject._newobj_instance ) {
                  var w = new spsidgui.EditObject();
-                 this._newobj_instance = w;
+                 spsidgui.EditObject._newobj_instance = w;
              }
 
-             var w = this._newobj_instance;
+             var w = spsidgui.EditObject._newobj_instance;
              w.modified = false;
              w.notifyRefresh = notifyRefresh;
              w.setContainerID(containerID);
@@ -173,7 +173,7 @@ qx.Class.define
                  box.add(new qx.ui.core.Spacer(0,20));
              }
              
-             var editLayout =  new qx.ui.layout.Grid(4, 0);
+             var editLayout =  new qx.ui.layout.Grid(4, 4);
              editLayout.setColumnMinWidth(0, 180);
              editLayout.setColumnFlex(0, 0);
              editLayout.setColumnFlex(1, 1);
@@ -291,9 +291,9 @@ qx.Class.define
                  spsidgui.DisplayObject.schemaParams(sel.getItem(0), d);
                  for(var key in d) {
                      for(var attr_name in d[key]) {
-                         if( d.defaultval[attr_name] != undefined ) {
+                         if( d.default_val[attr_name] != undefined ) {
                              origAttributes[attr_name] =
-                                 d.defaultval[attr_name];
+                                 d.default_val[attr_name];
                          }
                          else {
                              origAttributes[attr_name] = "";
@@ -354,10 +354,17 @@ qx.Class.define
              editZone.add(attrLabel, {row: nRow, column: 0});
              
              var valWidget;
-             if( d.isboolean[attr_name] ) {
+             if( d.is_boolean[attr_name] ) {
                  val = (val == 0 ? "0":"1");
                  valWidget = new qx.ui.form.CheckBox();
                  valWidget.setValue(val === "1" ? true:false);
+             }
+             else if ( d.is_objref[attr_name] ) {
+                 if( val == "" ) {
+                     val = 'NIL';
+                 }
+                 valWidget = new spsidgui.ObjectRefWidget();
+                 valWidget.setObjectID(val);                 
              }
              else {
                  valWidget = new qx.ui.form.TextField(val);
@@ -370,7 +377,7 @@ qx.Class.define
              valWidget.setUserData("origValue", val);
              valWidget.setUserData("attrName", attr_name);
              
-             if( d.isboolean[attr_name] ) {
+             if( d.is_boolean[attr_name] ) {
                  valWidget.addListener(
                      "changeValue",
                      function(e)
@@ -378,6 +385,16 @@ qx.Class.define
                          var field = e.getTarget();
                          var val = (e.getData() ? "1":"0");
                          this._fieldValueChanged(val, field);
+                     },
+                     this);
+             }
+             else if ( d.is_objref[attr_name] ) {
+                 valWidget.addListener(
+                     "changeObjectID",
+                     function(e)
+                     {
+                         var field = e.getTarget();
+                         this._fieldValueChanged(e.getData(), field);
                      },
                      this);
              }
@@ -410,8 +427,30 @@ qx.Class.define
                  valWidget.fireNonBubblingEvent(
                      "changeValue", qx.event.type.Data, [val, val]);
              }
-                 
-             editZone.add(valWidget, {row: nRow, column: 1});
+
+             if ( d.is_objref[attr_name] ) {
+                 var valComposite = new qx.ui.container.Composite(
+                     new qx.ui.layout.HBox(8));
+                 valComposite.add(valWidget);
+
+                 var refChangeButton = new qx.ui.form.Button("modify");
+                 refChangeButton.setUserData("valWidget", valWidget);
+                 refChangeButton.setUserData("objClass",
+                                             d.objref_class[attr_name]);
+                 refChangeButton.addListener(
+                     "execute", function(e) {
+                         var widget = e.getTarget().getUserData("valWidget");
+                         var objclass = e.getTarget().getUserData("objClass");
+                         spsidgui.SelectObject.openInstance(
+                             widget, objclass, this);
+                     },
+                     this);
+                 valComposite.add(refChangeButton);
+                 editZone.add(valComposite, {row: nRow, column: 1});
+             }
+             else {
+                 editZone.add(valWidget, {row: nRow, column: 1});
+             }
          },
 
          _fieldValueChanged : function(val, widget) {
