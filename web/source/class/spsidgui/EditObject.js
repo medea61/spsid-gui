@@ -125,6 +125,7 @@ qx.Class.define
          newObjClassController : null,
          newObjClassModel : null,
          
+         origAttributes : null,
          editedAttributes : null,
          modified : false,
          invalidAttributes : null,
@@ -296,7 +297,12 @@ qx.Class.define
                                  d.default_val[attr_name];
                          }
                          else {
-                             origAttributes[attr_name] = "";
+                             if ( d.is_objref[attr_name] ) {
+                                 origAttributes[attr_name] = 'NIL';
+                             }
+                             else {
+                                 origAttributes[attr_name] = "";
+                             }
                          }
                      }
                  }
@@ -313,6 +319,7 @@ qx.Class.define
              }
 
              this.attrDisplayProperties = d;
+             this.origAttributes = origAttributes;
              
              var attrnames = [];
              for( var attr_name in origAttributes ) {
@@ -614,6 +621,10 @@ qx.Class.define
                  var sel = this.newObjClassController.getSelection();
                  attr['spsid.object.class'] = sel.getItem(0);
                  attr['spsid.object.container'] = this.getContainerID();
+                 var origAttributes = this.origAttributes;
+                 for(var attr_name in origAttributes) {
+                     attr[attr_name] = origAttributes[attr_name];
+                 }
              }
              else {
                  var objID = this.getObjectID();
