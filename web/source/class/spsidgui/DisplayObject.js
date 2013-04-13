@@ -237,8 +237,7 @@ qx.Class.define
              spsidgui.DisplayObject.schemaParams(klass, d);
 
              var hide = {'spsid.object.id': 1,
-                         'spsid.object.container': 1,
-                         'spsid.object.class' : 1};
+                         'spsid.object.container': 1};
              
              var attrnames = new Array;
              for( var attr_name in attr ) {
@@ -261,6 +260,8 @@ qx.Class.define
              var default_val = {};
              var is_objref = {};
              var objref_class = {};
+             var is_protected = {"spsid.object.class" : true};
+             
              
              if( schema != undefined && schema.display != undefined ) {
                  
@@ -308,6 +309,14 @@ qx.Class.define
                          objref_class[name] = schema.object_ref[name];
                      }
                  }
+                 
+                 if( schema.display['protected'] != undefined ) {
+                     for(var name in schema.display['protected']) {
+                         if( schema.display['protected'][name] ) {
+                             is_protected[name] = true;
+                         }
+                     }
+                 }
              }
 
              d["hilite"] = hilite;
@@ -317,6 +326,7 @@ qx.Class.define
              d["default_val"] = default_val;
              d["is_objref"] = is_objref;
              d["objref_class"] = objref_class;
+             d["is_protected"] = is_protected;
          }
      }
  });

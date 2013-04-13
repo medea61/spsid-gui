@@ -293,16 +293,18 @@ qx.Class.define
                  spsidgui.DisplayObject.schemaParams(sel.getItem(0), d);
                  for(var key in d) {
                      for(var attr_name in d[key]) {
-                         if( d.default_val[attr_name] != undefined ) {
-                             origAttributes[attr_name] =
-                                 d.default_val[attr_name];
-                         }
-                         else {
-                             if ( d.is_objref[attr_name] ) {
-                                 origAttributes[attr_name] = 'NIL';
+                         if( ! d.is_protected[attr_name] ) {
+                             if( d.default_val[attr_name] != undefined ) {
+                                 origAttributes[attr_name] =
+                                     d.default_val[attr_name];
                              }
                              else {
-                                 origAttributes[attr_name] = "";
+                                 if ( d.is_objref[attr_name] ) {
+                                     origAttributes[attr_name] = 'NIL';
+                                 }
+                                 else {
+                                     origAttributes[attr_name] = "";
+                                 }
                              }
                          }
                      }
@@ -337,6 +339,11 @@ qx.Class.define
          
          _addAttribute : function(attr_name, val) {
              var d = this.attrDisplayProperties;
+
+             if( this.isNewObject() && d.is_protected[attr_name] ) {
+                 return;
+             }
+                              
              var editZone = this.editZone;
              var nRow = editZone.getLayout().getRowCount();
              
@@ -374,6 +381,9 @@ qx.Class.define
                  valWidget = new spsidgui.ObjectRefWidget();
                  valWidget.setObjectID(val);                 
              }
+             else if( d.is_protected[attr_name] ) {
+                 valWidget = new qx.ui.basic.Label(val);
+             }
              else {
                  valWidget = new qx.ui.form.TextField(val);
                  valWidget.setLiveUpdate(true);
@@ -406,7 +416,7 @@ qx.Class.define
                      },
                      this);
              }
-             else {
+             else if( ! d.is_protected[attr_name] ) {
                  valWidget.addListener(
                      "changeValue",
                      function(e)
