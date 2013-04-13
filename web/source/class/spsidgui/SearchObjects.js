@@ -47,9 +47,12 @@ qx.Class.define
              var topRow = new qx.ui.container.Composite(topRowLayout);
 
              topRow.add(new qx.ui.basic.Label("Find"), {row: 0, column: 0});
-      
-             var classList = this.classList = new qx.ui.form.SelectBox();
-             classList.set({ width: 200 });
+
+             var model = new qx.data.Array();
+             var classList = this.classList =
+                 new qx.ui.form.VirtualSelectBox(model);
+             classList.setLabelPath("classDescr");
+             classList.setWidth(200);
              topRow.add(classList, {row: 0, column: 1});
 
              // get the list of classes for searching
@@ -67,9 +70,10 @@ qx.Class.define
                          schema[b].display.sequence); });
              
              for (var i=0; i < filtered.length; i++) {
-                 classList.add(new qx.ui.form.ListItem(
-                     schema[filtered[i]].display.class_descr,
-                     null, filtered[i]));
+                 model.push(
+                     qx.data.marshal.Json.createModel({
+                         classDescr : schema[filtered[i]].display.class_descr,
+                         className : filtered[i]}));
              }
              
              topRow.add(new qx.ui.basic.Label("by prefix"),
@@ -122,10 +126,7 @@ qx.Class.define
                              if( userData != null && userData.length >= 3 )
                              {
                                  statusBar.setStatus("Searching...");
-                                 
-                                 var klasses =
-                                     classList.getModelSelection().toArray();
-                                 
+                                 var sel = classList.getSelection().getItem(0);
                                  rpc.search_prefix(
                                      function(target, result)
                                      {
@@ -135,7 +136,7 @@ qx.Class.define
                                          resultsWidget.setAttrList(result);
                                      },
                                      {},
-                                     klasses[0],
+                                     sel.getClassName(),
                                      null,
                                      userData);
                              }
@@ -148,8 +149,8 @@ qx.Class.define
              
 
              // generate a refresh if classList value is changed
-             classList.addListener(
-                 "changeSelection",
+             classList.getSelection().addListener(
+                 "change", 
                  function(e)
                  {
                      var val = searchField.getValue();

@@ -95,7 +95,7 @@ qx.Class.define
              this.add(topRow);
 
              var resultsList = this.resultsList = new qx.ui.list.List();
-             resultsList.setLabelPath("label");
+             resultsList.setLabelPath("objName");
              resultsList.getSelection().addListener(
                  "change", 
                  function(e) {
@@ -177,7 +177,7 @@ qx.Class.define
                                      attr['spsid.object.id'], attr);
                              resList.push(
                                  qx.data.marshal.Json.createModel({
-                                     label: obj.getObjectName(),
+                                     objName: obj.getObjectName(),
                                      objID: obj.getObjectID()
                                  }));
                          }

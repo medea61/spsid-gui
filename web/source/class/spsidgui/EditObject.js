@@ -75,10 +75,9 @@ qx.Class.define
              }
 
              var w = spsidgui.EditObject._newobj_instance;
-             w.modified = false;
              w.notifyRefresh = notifyRefresh;
              w.setContainerID(containerID);
-             w._populateNewObjController();
+             w._populateClassSelectBox();
              w._clearEditZone();
              w._populateEditZone();
              w._updateCaption();
@@ -122,8 +121,6 @@ qx.Class.define
          
          // for new objects: class selector
          newObjClassSelectBox : null,
-         newObjClassController : null,
-         newObjClassModel : null,
          
          origAttributes : null,
          editedAttributes : null,
@@ -150,16 +147,13 @@ qx.Class.define
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
              
              if( this.isNewObject() ) {
-                 this.newObjClassSelectBox = new qx.ui.form.SelectBox();
-                 this.newObjClassSelectBox.setWidth(200);
-                 this.newObjClassModel = new qx.data.Array();
-                 this.newObjClassController =
-                     new qx.data.controller.List(
-                         this.newObjClassModel,
-                         this.newObjClassSelectBox);
-                 
-                 this.newObjClassController.addListener(
-                     "changeSelection",
+                 var model = new qx.data.Array();
+                 var selectBox = this.newObjClassSelectBox =
+                     new qx.ui.form.VirtualSelectBox(model);
+                 selectBox.setWidth(200);
+
+                 selectBox.getSelection().addListener(
+                     "change",
                      function() {
                          this._clearEditZone();
                          this._populateEditZone();
@@ -169,7 +163,7 @@ qx.Class.define
                  var classZone =
                      new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
                  classZone.add(new qx.ui.basic.Label("Object class:"));
-                 classZone.add(this.newObjClassSelectBox);
+                 classZone.add(selectBox);
                  box.add(classZone);
                  box.add(new qx.ui.core.Spacer(0,20));
              }
@@ -264,17 +258,24 @@ qx.Class.define
              for(var i=0; i<removed.length; i++) {
                  removed[i].dispose();
              }
+             this.modified = false;
+             this.editedAttributes = {};
+             this.invalidAttributes = {};
+             this.saveButton.setEnabled(false);
          },
 
          
-         _populateNewObjController : function () {
-             this.newObjClassModel.removeAll();
+         _populateClassSelectBox : function () {
+
+             var model = this.newObjClassSelectBox.getModel();
+             model.removeAll();
 
              var containerID = this.getContainerID();
              var cntr = spsidgui.SpsidObject.getInstance(containerID);
              var klasses = spsidgui.EditObject.classNamesForNewObject(
                  cntr.getAttr('spsid.object.class'));
-             this.newObjClassModel.append(klasses);
+             
+             model.append(klasses);
              this.newObjClassSelectBox.setEnabled(true);
          },
 
@@ -287,7 +288,7 @@ qx.Class.define
              var origAttributes = {};
              
              if( this.isNewObject() ) {
-                 var sel = this.newObjClassController.getSelection();
+                 var sel = this.newObjClassSelectBox.getSelection();
                  d = {};
                  spsidgui.DisplayObject.schemaParams(sel.getItem(0), d);
                  for(var key in d) {
@@ -618,7 +619,7 @@ qx.Class.define
 
              var attr = {};
              if( this.isNewObject() ) {
-                 var sel = this.newObjClassController.getSelection();
+                 var sel = this.newObjClassSelectBox.getSelection();
                  attr['spsid.object.class'] = sel.getItem(0);
                  attr['spsid.object.container'] = this.getContainerID();
                  var origAttributes = this.origAttributes;
