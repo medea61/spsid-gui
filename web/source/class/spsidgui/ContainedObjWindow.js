@@ -135,7 +135,8 @@ qx.Class.define
                      var klasses = {};
                      for(var i=0; i<result.length; i++) {
                          var klass = result[i];
-                         if(schema[klass].display) {
+                         if(schema[klass] != undefined &&
+                            schema[klass].display != undefined) {
                              klasses[klass] = true;
                              if( ! myself.tViewPages[klass] ) {
                                  myself._addPage(
