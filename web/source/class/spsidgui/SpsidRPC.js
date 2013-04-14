@@ -113,6 +113,12 @@ qx.Class.define('spsidgui.SpsidRPC', {
                        {'id' : id});
         },
 
+        get_object_log : function(handler, target, id) {
+            this._call(handler, target,
+                       'get_object_log',
+                       {'id' : id});
+        },
+
         search_objects : function(handler, target, container, objclass) {
 
             var args = Array.prototype.slice.call(arguments);

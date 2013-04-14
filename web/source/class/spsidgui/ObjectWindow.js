@@ -13,6 +13,15 @@ qx.Class.define
              this.destroy();
          }, this);
      },
+
+     destruct : function()
+     {
+         if( this.objLoadListener != null ) {
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             obj.removeListenerById(this.objLoadListener);             
+         }
+     },
      
      properties : {
          objectID :  {
@@ -24,6 +33,8 @@ qx.Class.define
      statics :
      {
          _instances : {},
+         _logDialogWindow : null,
+         _logWidget : null,
          
          openInstance : function(objID) {
              if( ! spsidgui.ObjectWindow._instances[objID] ) {
@@ -39,40 +50,83 @@ qx.Class.define
 
      members :
      {
+         objLoadListener : null,
+
          initWindow : function() {
              this.setShowStatusbar(false);
              this.setWidth(500);
-             this.setHeight(300);
+             this.setHeight(400);
          },
          
          initContent : function() {
              
              var objID = this.getObjectID();
-             var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+             var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
              var buttonsRow = spsidgui.Application.buttonRow();
              var disp = new spsidgui.DisplayObject(objID);
              disp.addControlButtons(buttonsRow);
+
+             var logButton = new qx.ui.form.Button("Log");
+             logButton.addListener(
+                 "execute", function(e) {
+                     this.openLog();
+                 },
+                 this);
+             buttonsRow.add(logButton);
+             
              disp.buildContent();
 
              var obj = spsidgui.SpsidObject.getInstance(objID);
              if( obj.getReady() ) {
                  this._initCaption(obj);
              }
-             
-             var win = this;
-             obj.addListener(
-                 "loaded",
-                 function(e) { win._initCaption(e.getTarget()) });
+
+             this.objLoadListener =
+                 obj.addListener(
+                     "loaded",
+                     function(e)
+                     {
+                         this._initCaption(e.getTarget())
+                     },
+                     this);
              
              box.add(buttonsRow);             
              box.add(disp);
+
              this.add(box);
          },
          
          _initCaption: function(obj) {
              this.setCaption(obj.getObjectName() + ' -- ' +
                              obj.getAttr('spsid.object.class'));
-         }
+         },
+
+         openLog : function() {
+             if( spsidgui.ObjectWindow._logDialogWindow == undefined ) {
+                 var dw = spsidgui.ObjectWindow._logDialogWindow =
+                     new spsidgui.DialogWindow('Object log');
+                 spsidgui.ObjectWindow._logWidget =
+                     new spsidgui.ObjectLog();
+                 dw.add(spsidgui.ObjectWindow._logWidget, {flex: 1});
+
+                 var buttonsRow = spsidgui.Application.buttonRow();
+                 
+                 var okButton = new qx.ui.form.Button("OK");
+                 okButton.addListener(
+                     "execute",
+                     function() {
+                         spsidgui.ObjectWindow._logDialogWindow.close();
+                     });
+                 buttonsRow.add(okButton);
+                                  
+                 dw.add(buttonsRow);
+             }
+
+             var objID = this.getObjectID();
+             spsidgui.ObjectWindow._logWidget.setObjectID(objID);
+             spsidgui.ObjectWindow._logDialogWindow.positionAndOpen(
+                 this, 400, 400);
+         }        
      }
  });
 
