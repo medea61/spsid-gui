@@ -2,9 +2,6 @@ Delete object and all its recursive contents: need to close and refresh
 the corresponding windows.
 
 
-Display boolean attributes with checkbox:
-siam.object.complete
-snmp.managed
 
 Default values derived from other attributes:
 In SIAM::ServiceComponent,

@@ -261,6 +261,8 @@ qx.Class.define
              var is_objref = {};
              var objref_class = {};
              var is_protected = {"spsid.object.class" : true};
+             var is_dictionary = {};
+             var dictionary = {};
              
              
              if( schema != undefined && schema.display != undefined ) {
@@ -317,6 +319,17 @@ qx.Class.define
                          }
                      }
                  }
+
+                 if( schema.display['dictionary'] != undefined ) {
+                     for(var name in schema.display['dictionary']) {
+                         var values = schema.display['dictionary'][name];
+                         dictionary[name] = [];
+                         is_dictionary[name] = true;
+                         for(var i=0; i<values.length; i++) {
+                             dictionary[name].push(values[i]);
+                         }
+                     }
+                 }
              }
 
              d["hilite"] = hilite;
@@ -327,6 +340,8 @@ qx.Class.define
              d["is_objref"] = is_objref;
              d["objref_class"] = objref_class;
              d["is_protected"] = is_protected;
+             d["is_dictionary"] = is_dictionary;
+             d["dictionary"] = dictionary;
          }
      }
  });

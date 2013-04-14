@@ -377,12 +377,19 @@ qx.Class.define
                  valWidget = new qx.ui.form.CheckBox();
                  valWidget.setValue(val === "1" ? true:false);
              }
-             else if ( d.is_objref[attr_name] ) {
+             else if( d.is_objref[attr_name] ) {
                  if( val == "" ) {
                      val = 'NIL';
                  }
                  valWidget = new spsidgui.ObjectRefWidget();
                  valWidget.setObjectID(val);                 
+             }
+             else if( d.is_dictionary[attr_name] ) {
+                 var model = new qx.data.Array();
+                 model.append(d.dictionary[attr_name]);
+                 valWidget = new qx.ui.form.VirtualSelectBox(model);
+                 valWidget.getSelection().push(val);
+                 valWidget.setUserData("isSelectBox", true);
              }
              else {
                  valWidget = new qx.ui.form.TextField(val);
@@ -414,6 +421,17 @@ qx.Class.define
                          {
                              var field = e.getTarget();
                              this._fieldValueChanged(e.getData(), field);
+                         },
+                         this);
+                 }
+                 else if( d.is_dictionary[attr_name] ) {
+                     valWidget.getSelection().addListener(
+                         "change",
+                         function(e)
+                         {
+                             this._fieldValueChanged(
+                                 valWidget.getSelection().getItem(0),
+                                 valWidget);
                          },
                          this);
                  }
@@ -493,7 +511,14 @@ qx.Class.define
              var attr_name = widget.getUserData("attrName");
              if( val != widget.getUserData("origValue") ) {
                  this.editedAttributes[attr_name] = val;
-                 widget.setBackgroundColor("#f0e68c");
+
+                 var yellow = "#f0e68c";
+                 if( widget.getUserData("isSelectBox") ) {
+                     widget.getChildControl("atom").setBackgroundColor(yellow);
+                 }
+                 else {
+                     widget.setBackgroundColor(yellow);
+                 }
                  if( ! this.modified ) {
                      this.modified = true;
                      this._updateCaption();
@@ -504,7 +529,12 @@ qx.Class.define
                  }
              }
              else {
-                 widget.resetBackgroundColor();
+                 if( widget.getUserData("isSelectBox") ) {
+                     widget.getChildControl("atom").resetBackgroundColor();
+                 }
+                 else {
+                     widget.resetBackgroundColor();
+                 }
                  delete this.editedAttributes[attr_name];
                  if( Object.keys(
                      this.editedAttributes).length == 0 ) {
@@ -652,7 +682,9 @@ qx.Class.define
                  attr['spsid.object.container'] = this.getContainerID();
                  var origAttributes = this.origAttributes;
                  for(var attr_name in origAttributes) {
-                     attr[attr_name] = origAttributes[attr_name];
+                     if( origAttributes[attr_name] !== "" ) {
+                         attr[attr_name] = origAttributes[attr_name];
+                     }
                  }
              }
              else {
