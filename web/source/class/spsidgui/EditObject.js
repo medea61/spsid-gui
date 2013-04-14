@@ -369,7 +369,10 @@ qx.Class.define
              editZone.add(attrLabel, {row: nRow, column: 0});
              
              var valWidget;
-             if( d.is_boolean[attr_name] ) {
+             if( d.is_protected[attr_name] ) {
+                 valWidget = new qx.ui.basic.Label(val);
+             }
+             else if( d.is_boolean[attr_name] ) {
                  val = (val == 0 ? "0":"1");
                  valWidget = new qx.ui.form.CheckBox();
                  valWidget.setValue(val === "1" ? true:false);
@@ -381,9 +384,6 @@ qx.Class.define
                  valWidget = new spsidgui.ObjectRefWidget();
                  valWidget.setObjectID(val);                 
              }
-             else if( d.is_protected[attr_name] ) {
-                 valWidget = new qx.ui.basic.Label(val);
-             }
              else {
                  valWidget = new qx.ui.form.TextField(val);
                  valWidget.setLiveUpdate(true);
@@ -394,56 +394,59 @@ qx.Class.define
 
              valWidget.setUserData("origValue", val);
              valWidget.setUserData("attrName", attr_name);
-             
-             if( d.is_boolean[attr_name] ) {
-                 valWidget.addListener(
-                     "changeValue",
-                     function(e)
-                     {
-                         var field = e.getTarget();
-                         var val = (e.getData() ? "1":"0");
-                         this._fieldValueChanged(val, field);
-                     },
-                     this);
-             }
-             else if ( d.is_objref[attr_name] ) {
-                 valWidget.addListener(
-                     "changeObjectID",
-                     function(e)
-                     {
-                         var field = e.getTarget();
-                         this._fieldValueChanged(e.getData(), field);
-                     },
-                     this);
-             }
-             else if( ! d.is_protected[attr_name] ) {
-                 valWidget.addListener(
-                     "changeValue",
-                     function(e)
-                     {
-                         var field = e.getTarget();
-                         var val = e.getData();
-                         var attr_name = field.getUserData("attrName");
-                         if( val == "" && field.getUserData("mandatory") ) {
-                             var msg =
-                                 "Must provide a value for mandatory attribute";
-                             field.setInvalidMessage(msg);
-                             field.setValid(false);
-                             this.invalidAttributes[attr_name] = true;
-                             this.setStatus(msg);
-                         }
-                         else {
-                             field.setValid(true);
-                             this.invalidAttributes[attr_name] = false;
-                             this.setStatus("");
-                         }
-                         
-                         this._fieldValueChanged(val, field);
-                     },
-                     this);
-             
-                 valWidget.fireNonBubblingEvent(
-                     "changeValue", qx.event.type.Data, [val, val]);
+
+             if( ! d.is_protected[attr_name] ) {
+                 if( d.is_boolean[attr_name] ) {
+                     valWidget.addListener(
+                         "changeValue",
+                         function(e)
+                         {
+                             var field = e.getTarget();
+                             var val = (e.getData() ? "1":"0");
+                             this._fieldValueChanged(val, field);
+                         },
+                         this);
+                 }
+                 else if ( d.is_objref[attr_name] ) {
+                     valWidget.addListener(
+                         "changeObjectID",
+                         function(e)
+                         {
+                             var field = e.getTarget();
+                             this._fieldValueChanged(e.getData(), field);
+                         },
+                         this);
+                 }
+                 else  {
+                     valWidget.addListener(
+                         "changeValue",
+                         function(e)
+                         {
+                             var field = e.getTarget();
+                             var val = e.getData();
+                             var attr_name = field.getUserData("attrName");
+                             if( val == "" && field.getUserData("mandatory") ) {
+                                 var msg =
+                                     "Must provide a value for " +
+                                     "mandatory attribute";
+                                 field.setInvalidMessage(msg);
+                                 field.setValid(false);
+                                 this.invalidAttributes[attr_name] = true;
+                                 this.setStatus(msg);
+                             }
+                             else {
+                                 field.setValid(true);
+                                 this.invalidAttributes[attr_name] = false;
+                                 this.setStatus("");
+                             }
+                             
+                             this._fieldValueChanged(val, field);
+                         },
+                         this);
+                     
+                     valWidget.fireNonBubblingEvent(
+                         "changeValue", qx.event.type.Data, [val, val]);
+                 }
              }
 
              if ( d.is_objref[attr_name] ) {
@@ -451,19 +454,34 @@ qx.Class.define
                      new qx.ui.layout.HBox(8));
                  valComposite.add(valWidget);
 
-                 var refChangeButton = new qx.ui.form.Button("modify");
-                 refChangeButton.setUserData("valWidget", valWidget);
-                 refChangeButton.setUserData("objClass",
-                                             d.objref_class[attr_name]);
-                 refChangeButton.addListener(
-                     "execute", function(e) {
-                         var widget = e.getTarget().getUserData("valWidget");
-                         var objclass = e.getTarget().getUserData("objClass");
-                         spsidgui.SelectObject.openInstance(
-                             widget, objclass, this);
-                     },
-                     this);
-                 valComposite.add(refChangeButton);
+                 if( ! d.is_protected[attr_name] ) {
+                     var refChangeButton = new qx.ui.form.Button("select");
+                     refChangeButton.setUserData("valWidget", valWidget);
+                     refChangeButton.setUserData("objClass",
+                                                 d.objref_class[attr_name]);
+                     refChangeButton.addListener(
+                         "execute", function(e) {
+                             var widget =
+                                 e.getTarget().getUserData("valWidget");
+                             var objclass =
+                                 e.getTarget().getUserData("objClass");
+                             spsidgui.SelectObject.openInstance(
+                                 widget, objclass, this);
+                         },
+                         this);
+                     valComposite.add(refChangeButton);
+
+                     var nilButton = new qx.ui.form.Button("clear");
+                     nilButton.setUserData("valWidget", valWidget);
+                     nilButton.addListener(
+                         "execute", function(e) {
+                             var widget =
+                                 e.getTarget().getUserData("valWidget");
+                             widget.setObjectID("NIL");
+                         },
+                         this);
+                     valComposite.add(nilButton);
+                 }
                  editZone.add(valComposite, {row: nRow, column: 1});
              }
              else {

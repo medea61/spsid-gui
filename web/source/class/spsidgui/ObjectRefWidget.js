@@ -31,8 +31,11 @@ qx.Class.define
          
          _applyObjectID : function(value, old) {
              if( old != undefined && old != 'NIL' ) {
-                 var oldObj = spsidgui.SpsidObject.getInstance(old);
-                 oldObj.removeListenerById(this.objLoadListener);
+                 if( this.objLoadListener != undefined ) {
+                     var oldObj = spsidgui.SpsidObject.getInstance(old);
+                     oldObj.removeListenerById(this.objLoadListener);
+                     this.objLoadListener = null;
+                 }
              }
 
              if( value != undefined && value != 'NIL' ) {
