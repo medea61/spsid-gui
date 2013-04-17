@@ -1,7 +1,4 @@
-Delete object and all its recursive contents: need to close and refresh
-the corresponding windows.
-
-
+Delete the objects which have no content
 
 Default values derived from other attributes:
 In SIAM::ServiceComponent,

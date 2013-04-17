@@ -124,6 +124,7 @@ qx.Class.define
          
          origAttributes : null,
          editedAttributes : null,
+         addedAttributes : null,
          modified : false,
          invalidAttributes : null,
          
@@ -178,6 +179,7 @@ qx.Class.define
 
              this.editedAttributes = {};
              this.invalidAttributes = {};
+             this.addedAttributes = {};
              
              var buttonsRow = spsidgui.Application.buttonRow();
 
@@ -343,7 +345,7 @@ qx.Class.define
              if( this.isNewObject() && d.is_protected[attr_name] ) {
                  return;
              }
-                              
+                                  
              var editZone = this.editZone;
              var nRow = editZone.getLayout().getRowCount();
              
@@ -595,24 +597,29 @@ qx.Class.define
                  var dw = new spsidgui.DialogWindow('Add Attribute');
                  spsidgui.EditObject._addAttrDialogWindow = dw;
 
-                 var gridLayout = new qx.ui.layout.Grid(6,6);
-                 gridLayout.setColumnFlex(1,1);
-                 var grid = new qx.ui.container.Composite(gridLayout);
-
+                 var inputRow = new qx.ui.container.Composite(
+                     new qx.ui.layout.HBox(4));
+                 inputRow.set({paddingTop:10, paddingBottom:15});
+                 
                  var okHandler = function() {
                      var dw = spsidgui.EditObject._addAttrDialogWindow;
-                     var w = dw.getUserData("editorWindow");
-                     w._addAttribute(
-                         dw.getUserData("nameField").getValue(), "");
-                     w.setStatus("Attribute added");
-                     dw.close();
+                     if( dw.getUserData("okAllowed") ) {
+                         var w = dw.getUserData("editorWindow");
+                         var attr_name = dw.getUserData("nameCombo").getValue();
+                         w._addAttribute(attr_name, "");
+                         w.addedAttributes[attr_name] = true;
+                         w.setStatus("Attribute added");
+                         dw.close();
+                     }
                  };
                  
-                 grid.add(new qx.ui.basic.Label("Attribute name:"),
-                         {row:0, column:0});
-                 var nameField = new qx.ui.form.TextField();
+                 inputRow.add(new qx.ui.basic.Label("Attribute name:"));
+
+                 var nameCombo = new qx.ui.form.VirtualComboBox();
+                 
+                 var nameField = nameCombo.getChildControl("textfield");
                  nameField.setLiveUpdate(true);
-                 dw.setUserData("nameField", nameField);
+                 dw.setUserData("nameCombo", nameCombo);
 
                  nameField.addListener(
                      "changeValue",
@@ -620,10 +627,15 @@ qx.Class.define
                      {
                          var val = e.getData();
                          var re = new RegExp("^[a-z][a-z0-9_.]+$");
-                         if( re.test(val) ) {
+                         var w = this.getUserData("editorWindow");
+                         if( re.test(val) &&
+                             w.origAttributes[val] == undefined &&
+                             ! w.addedAttributes[val]) {
+                             this.setUserData("okAllowed", true);
                              this.getUserData("okButton").setEnabled(true);
                          }
                          else {
+                             this.setUserData("okAllowed", false);
                              this.getUserData("okButton").setEnabled(false);
                          }
                      },
@@ -636,11 +648,15 @@ qx.Class.define
                          if (e.getKeyIdentifier() == "Enter") {
                              okHandler();
                          }
+                         else if (e.getKeyIdentifier() == "Escape") {
+                             var dw = spsidgui.EditObject._addAttrDialogWindow;
+                             dw.close();
+                         }
                      });
                  
-                 grid.add(nameField, {row:0, column:1});
+                 inputRow.add(nameCombo, {flex:1});
                  
-                 dw.add(grid);
+                 dw.add(inputRow);
                  
                  var buttonsRow = spsidgui.Application.buttonRow();
                  
@@ -666,10 +682,38 @@ qx.Class.define
 
              var dw = spsidgui.EditObject._addAttrDialogWindow;
              dw.setUserData("editorWindow", this);
-             var nameField = dw.getUserData("nameField");
-             nameField.setValue("");
+             var nameCombo = dw.getUserData("nameCombo");
+             nameCombo.setValue("");
+
+             // populate the combo with attrnames that are not in the object
+             var attrs = {};
+             if( ! this.isNewObject() ) {
+                 var objID = this.getObjectID();
+                 var obj = spsidgui.SpsidObject.getInstance(objID);
+                 var klass = obj.getAttr('spsid.object.class');
+                 var d = {};
+                 spsidgui.DisplayObject.schemaParams(klass, d);
+                 for(var key in d) {
+                     for(var attr_name in d[key]) {
+                         if( ! d.is_protected[attr_name] &&
+                             this.origAttributes[attr_name] == undefined &&
+                             ! this.addedAttributes[attr_name])
+                         {
+                             attrs[attr_name] = true;
+                         }
+                     }
+                 }
+             }
+             
+             var attrnames = nameCombo.getModel();
+             attrnames.removeAll();
+             for(var attr_name in attrs) {
+                 attrnames.push(attr_name);
+             }
+             attrnames.sort();
+             
              dw.positionAndOpen(this, 400, 50);
-             nameField.focus();
+             nameCombo.focus();
          },
 
 
