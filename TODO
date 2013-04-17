@@ -1,6 +1,7 @@
 Delete the objects which have no content
 
-Default values derived from other attributes:
+
+Auto-calculated values for protected attributes:
 In SIAM::ServiceComponent,
 torrus.port.nodeid would be derived from siam.svcc.inventory_id
 
