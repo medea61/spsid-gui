@@ -21,10 +21,10 @@ qx.Class.define
      
      destruct : function()
      {
-         if( this.objLoadListener != null ) {
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             obj.removeListenerById(this.objLoadListener);             
+         var objID = this.getObjectID();
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         if( obj != undefined ) {
+             obj.removeListener("loaded", this._onObjectLoaded, this);
          }
      },
 
@@ -53,7 +53,6 @@ qx.Class.define
 
      members :
      {
-         objLoadListener : null,
          tView : null,
          tViewPages : null,
          
@@ -72,10 +71,7 @@ qx.Class.define
                  this._initCaption(obj);
              }
              
-             this.objLoadListener = obj.addListener(
-                 "loaded",
-                 function(e) { this._initCaption(e.getTarget()) },
-                 this);
+             obj.addListener("loaded", this._onObjectLoaded, this);
 
              var winVBox = new qx.ui.container.Composite(
                  new qx.ui.layout.VBox(4));
@@ -184,6 +180,10 @@ qx.Class.define
                      resultsWidget,
                      objID, klass);
              }
+         },
+         
+         _onObjectLoaded : function (e) {
+             this._initCaption(e.getTarget());
          },
          
          _initCaption: function(obj) {

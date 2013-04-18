@@ -13,10 +13,11 @@ qx.Class.define
 
      destruct : function()
      {
-         if( this.objLoadListener != null ) {
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             obj.removeListenerById(this.objLoadListener);             
+         var objID = this.getObjectID();
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         if( obj != undefined ) {
+             obj.removeListener("loaded", this._onObjectLoaded, this);
+             obj.removeListener("deleted", this._onObjectDeleted, this);
          }
      },
      
@@ -30,27 +31,28 @@ qx.Class.define
 
      members :
      {
-         objLoadListener : null,
          contentWidget : null,
 
          _applyObjectID : function(objID, oldObjID)
          {
-             if( oldObjID != null && this.objLoadListener != null ) {
-                 var obj = spsidgui.SpsidObject.getInstance(oldObjID);
-                 obj.removeListenerById(this.objLoadListener);
+             if( oldObjID != undefined && oldObjID != 'NIL' ) {
+                 var oldObj = spsidgui.SpsidObject.getInstance(oldObjID);
+                 if( oldObj != undefined ) {
+                     oldObj.removeListener("loaded",
+                                           this._onObjectLoaded, this);
+                     oldObj.removeListener("deleted",
+                                           this._onObjectDeleted, this);
+                 }
              }
 
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             
-             this.objLoadListener =
-                 obj.addListener(
-                     "loaded", function(e) {
-                         this.buildContent();
-                     },
-                     this);
+             if( objID != undefined && objID != 'NIL' ) {
+                 var obj = spsidgui.SpsidObject.getInstance(objID);
+                 obj.addListener("loaded", this._onObjectLoaded, this);
+                 obj.addListener("deleted", this._onObjectDeleted, this);
 
-             if( obj.isReady() ) {
-                 this.buildContent();
+                 if( obj.isReady() ) {
+                     this.buildContent();
+                 }
              }
          },
 
@@ -92,7 +94,16 @@ qx.Class.define
               '<div style="margin-left:20px">' + entry['msg'] + "</div>");
              
              this.contentWidget.add(htmlLabel);
-         }             
+         },
+
+         _onObjectLoaded : function () {
+             this.buildContent();
+         },
+         
+         _onObjectDeleted : function() {
+             this.destroy();
+         }
+
      }
  });
                       

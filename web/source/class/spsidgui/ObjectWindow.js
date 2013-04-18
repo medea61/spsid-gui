@@ -16,10 +16,11 @@ qx.Class.define
 
      destruct : function()
      {
-         if( this.objLoadListener != null ) {
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             obj.removeListenerById(this.objLoadListener);             
+         var objID = this.getObjectID();
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         if( obj != undefined ) {
+             obj.removeListener("loaded", this._onObjectLoaded, this);
+             obj.removeListener("deleted", this._onObjectDeleted, this);
          }
      },
      
@@ -50,8 +51,6 @@ qx.Class.define
 
      members :
      {
-         objLoadListener : null,
-
          initWindow : function() {
              this.setShowStatusbar(false);
              this.setWidth(500);
@@ -81,14 +80,8 @@ qx.Class.define
                  this._initCaption(obj);
              }
 
-             this.objLoadListener =
-                 obj.addListener(
-                     "loaded",
-                     function(e)
-                     {
-                         this._initCaption(e.getTarget())
-                     },
-                     this);
+             obj.addListener("loaded", this._onObjectLoaded, this);
+             obj.addListener("deleted", this._onObjectDeleted, this);
              
              box.add(buttonsRow);             
              box.add(disp);
@@ -126,7 +119,18 @@ qx.Class.define
              spsidgui.ObjectWindow._logWidget.setObjectID(objID);
              spsidgui.ObjectWindow._logDialogWindow.positionAndOpen(
                  this, 400, 400);
-         }        
+         },
+
+         _onObjectLoaded : function (e) {
+             this._initCaption(e.getTarget())
+         },
+
+         _onObjectDeleted : function() {
+             this.close();
+             var objID = this.getObjectID();
+             delete spsidgui.ObjectWindow._instances[objID];
+             this.destroy();
+         }
      }
  });
 

@@ -17,10 +17,11 @@ qx.Class.define
 
      destruct : function()
      {
-         if( this.objLoadListener != null ) {
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             obj.removeListenerById(this.objLoadListener);             
+         var objID = this.getObjectID();
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         if( obj != undefined ) {
+             obj.removeListener("loaded", this._onObjectLoaded, this);
+             obj.removeListener("deleted", this._onObjectDeleted, this);
          }
      },
 
@@ -55,6 +56,7 @@ qx.Class.define
                  w.addListener('close', function(e) {
                      var target = e.getTarget();
                      var objID = target.getObjectID();
+                     var obj = spsidgui.SpsidObject.getInstance(objID);
                      delete spsidgui.EditObject._edit_instances[objID];
                      target.destroy();
                  }, w);
@@ -111,13 +113,12 @@ qx.Class.define
          },
 
          _addAttrDialogWindow : null,
-         _validationErrorDialogWindow : null
+         _deleteConfirmDialogWindow : null
      },
 
      members :
      {
          editZone : null,
-         objLoadListener : null,
          
          // for new objects: class selector
          newObjClassSelectBox : null,
@@ -229,7 +230,7 @@ qx.Class.define
                      this);
                  
                  deleteButton.setToolTip(new qx.ui.tooltip.ToolTip(
-                     "Delete this and all contained objects"));
+                     "Delete this object"));
                  buttonsRow.add(deleteButton);
                  this.deleteButton = deleteButton;
              }
@@ -241,16 +242,8 @@ qx.Class.define
                  var objID = this.getObjectID();
                  var obj = spsidgui.SpsidObject.getInstance(objID);
                                   
-                 this.objLoadListener = obj.addListener(
-                     "loaded",
-                     function(e) {
-                         if( ! this.modified ) {
-                             this._clearEditZone();
-                             this._populateEditZone();
-                             this._updateCaption();
-                         }
-                     },
-                     this);
+                 obj.addListener("loaded", this._onObjectLoaded, this);
+                 obj.addListener("deleted", this._onObjectDeleted, this);
                  
                  this._populateEditZone();
                  this._updateCaption();
@@ -674,7 +667,7 @@ qx.Class.define
                  
                  var buttonsRow = spsidgui.Application.buttonRow();
                  
-                 var okButton = new qx.ui.form.Button("OK");
+                 var okButton = new qx.ui.form.Button("Ok");
                  okButton.setEnabled(false);
                  dw.setUserData("okButton", okButton);
                  okButton.addListener(
@@ -836,7 +829,99 @@ qx.Class.define
          },
          
          _onDeleteObject : function() {
-         }
+             if( this.isNewObject() ) {
+                 console.log('ERROR: _onDeleteObject() is called for a ' +
+                             'new object');
+                 return;
+             }
+             
+             var objID = this.getObjectID();
+             var rpc = spsidgui.SpsidRPC.getInstance();
+             rpc.contained_classes(
+                 function(target, result) {
+                     if(result.length == 0) {
+                         target._askDeleteConfirmation();
+                     }
+                     else {
+                         spsidgui.DialogWindow.say(
+                             'Cannot delete the object',
+                             'This object cannot be deleted because it ' +
+                                 'contains other objects' );
+                     }
+                 },
+                 this,
+                 objID);
+         },
+
+         _askDeleteConfirmation : function() {
+             if( spsidgui.EditObject._deleteConfirmDialogWindow == undefined ) {
+                 var dw = new spsidgui.DialogWindow('Please confirm');
+                 spsidgui.EditObject._deleteConfirmDialogWindow = dw;
+
+                 var msgLabel = new qx.ui.basic.Label();
+                 msgLabel.set({rich : true,
+                               selectable : true});
+                 dw.setUserData("msgLabel", msgLabel);
+                 dw.add(msgLabel, {flex: 1});
+                 
+                 var buttonsRow = spsidgui.Application.buttonRow();
+                 
+                 var okButton = new qx.ui.form.Button("Ok");
+                 okButton.addListener(
+                     "execute",
+                     function() {
+                         var w = dw.getUserData("editorWindow");
+                         this.close();
+                         w._deleteObject();
+                     },
+                     dw);
+                 buttonsRow.add(okButton);
+
+                 var cancelButton = new qx.ui.form.Button("Cancel");
+                 cancelButton.addListener(
+                     "execute",
+                     function() {
+                         this.close();
+                     },
+                     dw);
+                 buttonsRow.add(cancelButton);
+
+                 dw.add(buttonsRow);
+             }
+
+             var dw = spsidgui.EditObject._deleteConfirmDialogWindow;
+             dw.setUserData("editorWindow", this);
+
+             var msgLabel = dw.getUserData("msgLabel");
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             msgLabel.setValue(
+                 "The object <b>" + obj.getObjectName() +
+                     "</b> will be deleted. Please confirm.");
+             dw.positionAndOpen(this, 400, 50);
+         },
+         
+         _deleteObject : function() {
+             var objID = this.getObjectID();
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             obj.deleteObject();
+             console.log("Object deleted: " + objID);
+         },
+
+         _onObjectLoaded : function () {
+             if( ! this.modified ) {
+                 this._clearEditZone();
+                 this._populateEditZone();
+                 this._updateCaption();
+             }
+         },
+
+         _onObjectDeleted : function() {
+             this.close();
+             var objID = this.getObjectID();
+             spsidgui.EditObject._edit_instances[objID]
+             this.destroy();
+         }             
      }
  });
 

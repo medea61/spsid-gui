@@ -38,14 +38,20 @@ qx.Class.define
 
      events :
      {
-         "loaded": "qx.event.type.Data"
+         "loaded": "qx.event.type.Data",
+         "deleted": "qx.event.type.Data"
      },
 
      statics :
      {
          _instances : {},
+         _deletedObjects : {},
          
          getInstance : function(objID, attr) {
+             if( spsidgui.SpsidObject._deletedObjects[objID] ) {
+                 return(null);
+             }
+             
              if( ! spsidgui.SpsidObject._instances[objID] ) {
                  var o = new spsidgui.SpsidObject(objID, attr);
                  spsidgui.SpsidObject._instances[objID] = o;
@@ -116,6 +122,20 @@ qx.Class.define
                  return;
              }
              return(attr[name]);
+         },
+
+         deleteObject : function() {
+             var rpc = spsidgui.SpsidRPC.getInstance();
+             rpc.delete_object(
+                 function(target) {
+                     target.fireDataEvent("deleted");
+                     var objID = target.getObjectID();
+                     delete spsidgui.SpsidObject._instances[objID];
+                     spsidgui.SpsidObject._deletedObjects[objID] = true;
+                     target.dispose();
+                 },
+                 this,
+                 this.getObjectID());
          }
      }
  });

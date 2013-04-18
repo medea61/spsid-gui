@@ -85,6 +85,7 @@ qx.Class.define
              buttonsRow.add(popupButton);
              
              disp.addControlButtons(buttonsRow);
+             disp.setDestroyOnObjectDelete(box);
              disp.buildContent();
              
              box.add(buttonsRow);             

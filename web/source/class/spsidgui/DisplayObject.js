@@ -16,20 +16,18 @@ qx.Class.define
 
          var myself = this;
          var obj = spsidgui.SpsidObject.getInstance(objID);
-         this.objLoadListener =
-             obj.addListener(
-                 "loaded", function(e) {
-                     this.buildContent();
-                 },
-                 this);
+
+         obj.addListener("loaded", this._onObjectLoaded, this);
+         obj.addListener("deleted", this._onObjectDeleted, this);
      },
 
      destruct : function()
      {
-         if( this.objLoadListener != null ) {
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             obj.removeListenerById(this.objLoadListener);             
+         var objID = this.getObjectID();
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         if( obj != undefined ) {
+             obj.removeListener("loaded", this._onObjectLoaded, this);
+             obj.removeListener("deleted", this._onObjectDeleted, this);
          }
      },
      
@@ -40,14 +38,18 @@ qx.Class.define
          },
 
          nameLabel : {
-             check : Object,
+             check : "Object",
              nullable : true
-         }         
+         },
+
+         destroyOnObjectDelete : {
+             check : "Object",
+             nullable : true
+         }
      },
 
      members :
      {
-         objLoadListener : null,
          containerButton : null,
          contentButton : null,
          editButton : null,
@@ -224,6 +226,17 @@ qx.Class.define
              for(var i=0; i<removed.length; i++) {
                  removed[i].dispose();
              }
+         },
+         
+         _onObjectLoaded : function () {
+             this.buildContent();
+         },
+         
+         _onObjectDeleted : function() {
+             if( this.getDestroyOnObjectDelete() != undefined ) {
+                 this.getDestroyOnObjectDelete().destroy();
+             }
+             this.destroy();             
          }
      },
 

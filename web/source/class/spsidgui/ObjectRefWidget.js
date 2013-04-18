@@ -9,10 +9,11 @@ qx.Class.define
 
      destruct : function()
      {
-         if( this.objLoadListener != null ) {
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             obj.removeListenerById(this.objLoadListener);             
+         var objID = this.getObjectID();
+         var obj = spsidgui.SpsidObject.getInstance(objID);
+         if( obj != undefined ) {
+             obj.removeListener("loaded", this._onObjectLoaded, this);
+             obj.removeListener("deleted", this._onObjectDeleted, this);
          }
      },
 
@@ -27,32 +28,27 @@ qx.Class.define
 
      members :
      {
-         objLoadListener : null,
-         
-         _applyObjectID : function(value, old) {
-             if( old != undefined && old != 'NIL' ) {
-                 if( this.objLoadListener != undefined ) {
-                     var oldObj = spsidgui.SpsidObject.getInstance(old);
-                     oldObj.removeListenerById(this.objLoadListener);
-                     this.objLoadListener = null;
+         _applyObjectID : function(objID, oldObjID) {
+             if( oldObjID != undefined && oldObjID != 'NIL' ) {
+                 var oldObj = spsidgui.SpsidObject.getInstance(oldObjID);
+                 if( oldObj != undefined ) {
+                     oldObj.removeListener("loaded",
+                                           this._onObjectLoaded, this);
+                     oldObj.removeListener("deleted",
+                                           this._onObjectDeleted, this);
                  }
              }
 
-             if( value != undefined && value != 'NIL' ) {
-                 var obj = spsidgui.SpsidObject.getInstance(value);
-                 this.objLoadListener =
-                     obj.addListener(
-                         "loaded", function(e) {
-                             this._updateValue();
-                         },
-                         this);
+             if( objID != undefined && objID != 'NIL' ) {
+                 var obj = spsidgui.SpsidObject.getInstance(objID);
+                 obj.addListener("loaded", this._onObjectLoaded, this);
+                 obj.addListener("deleted", this._onObjectDeleted, this);
              }
              
-             this._updateValue();
+             this._onObjectLoaded();
          },
 
-
-         _updateValue : function () {
+         _onObjectLoaded : function () {
              var objID = this.getObjectID();
              var valUpdated = false;
              if( objID != undefined && objID != 'NIL') {
@@ -66,6 +62,11 @@ qx.Class.define
              if( ! valUpdated ) {
                  this.setValue('NIL');
              }
+         },
+
+         _onObjectDeleted : function() {
+             this.setObjectID(null);
+             this.setValue('NIL');
          }
      }
  });
