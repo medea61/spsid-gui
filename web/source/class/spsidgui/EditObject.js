@@ -131,6 +131,7 @@ qx.Class.define
          attrDisplayProperties : null,
 
          saveButton : null,
+         deleteButton : null,
          notifyRefresh : null,
          
          initWindow : function() {
@@ -230,6 +231,7 @@ qx.Class.define
                  deleteButton.setToolTip(new qx.ui.tooltip.ToolTip(
                      "Delete this and all contained objects"));
                  buttonsRow.add(deleteButton);
+                 this.deleteButton = deleteButton;
              }
                  
              box.add(buttonsRow);             
@@ -320,6 +322,18 @@ qx.Class.define
                  for( var i=0; i<d.attrnames.length; i++) {
                      var attr_name = d.attrnames[i];
                      origAttributes[attr_name] = obj.getAttr(attr_name);
+                 }
+
+                 // enable the Delete button only if there are
+                 // no contained objects
+                 if( this.deleteButton != undefined ) {
+                     var rpc = spsidgui.SpsidRPC.getInstance();
+                     rpc.contained_classes(
+                         function(button, result) {
+                             button.setEnabled(result.length == 0);
+                         },
+                         this.deleteButton,
+                         objID);
                  }
              }
 
@@ -777,34 +791,8 @@ qx.Class.define
                  this._saveObject();
              }
              else {
-                 if( spsidgui.EditObject._validationErrorDialogWindow ==
-                     undefined ) {
-                     var dw = new spsidgui.DialogWindow(
-                         'Object validation error');
-                     spsidgui.EditObject._validationErrorDialogWindow = dw;
-
-                     var msgLabel = new qx.ui.basic.Label();
-                     msgLabel.set({rich : true,
-                                   selectable : true});
-                     dw.setUserData("msgLabel", msgLabel);
-                     dw.add(msgLabel, {flex: 1});
-
-                     var buttonsRow = spsidgui.Application.buttonRow();
-                     var okButton = new qx.ui.form.Button("OK");
-                     okButton.addListener(
-                         "execute",
-                         function() { this.close() },
-                         dw);
-                     buttonsRow.add(okButton);
-                     
-                     dw.add(buttonsRow);
-                 }
-
-                 var dw = spsidgui.EditObject._validationErrorDialogWindow;
-                 var msgLabel = dw.getUserData("msgLabel");
-                 msgLabel.setValue(result.error);
-                 
-                 dw.positionAndOpen(this, 400, 50);
+                 spsidgui.DialogWindow.say(
+                     'Object validation error', result.error);
              }
          },
 

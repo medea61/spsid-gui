@@ -16,7 +16,40 @@ qx.Class.define
          this.setLayout(new qx.ui.layout.VBox(4));
      },
 
-     members:
+     statics :
+     {
+         _sayWindow : null,
+         
+         say : function(title, message) {
+             if( spsidgui.DialogWindow._sayWindow == undefined ) {
+                 var dw = new spsidgui.DialogWindow();
+                 spsidgui.DialogWindow._sayWindow = dw;
+                 
+                 var msgLabel = new qx.ui.basic.Label();
+                 msgLabel.set({rich : true,
+                               selectable : true});
+                 dw.setUserData("msgLabel", msgLabel);
+                 dw.add(msgLabel, {flex: 1});
+                 
+                 var buttonsRow = spsidgui.Application.buttonRow();
+                 var okButton = new qx.ui.form.Button("OK");
+                 okButton.addListener(
+                     "execute",
+                     function() { this.close() },
+                     dw);
+                 buttonsRow.add(okButton);
+                 dw.add(buttonsRow);
+             }
+
+             var dw = spsidgui.DialogWindow._sayWindow;
+             dw.setCaption(title);
+             var msgLabel = dw.getUserData("msgLabel");
+             msgLabel.setValue(message);
+             dw.positionAndOpen(spsidgui.AppWindow.desktop, 400, 80);
+         }
+     },
+     
+     members :
      {
          positionAndOpen : function(parent, width, height) {
 
