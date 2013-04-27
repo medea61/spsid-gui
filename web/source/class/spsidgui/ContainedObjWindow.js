@@ -127,17 +127,16 @@ qx.Class.define
                          return;
                      }
 
-                     var schema = spsidgui.Application.schema;
                      var klasses = {};
                      for(var i=0; i<result.length; i++) {
                          var klass = result[i];
-                         if(schema[klass] != undefined &&
-                            schema[klass].display != undefined) {
+                         var schema = spsidgui.Schema.getInstance(klass);
+                         if( schema.hasDisplay() ) {
                              klasses[klass] = true;
                              if( ! myself.tViewPages[klass] ) {
                                  myself._addPage(
                                      klass,
-                                     schema[klass].display.class_descr);
+                                     schema.displayDescr());
                              }
                              else {
                                  myself._refreshPage(klass);

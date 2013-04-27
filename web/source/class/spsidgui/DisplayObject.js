@@ -122,18 +122,20 @@ qx.Class.define
                  return;
              }
 
-             var d = spsidgui.DisplayObject.prepareForDisplay(obj);
+             var schema = obj.getSchema();
+             var attrnames = obj.getAttrListForDisplay();
              
              var nRow = 0;
-             for( var i=0; i<d.attrnames.length; i++) {
-                 var attr_name = d.attrnames[i];
+             for( var i=0; i<attrnames.length; i++) {
+                 var attr_name = attrnames[i];
                  
                  var attrLabel = new qx.ui.basic.Label(attr_name);
                  attrLabel.set({selectable : true,
                                 paddingLeft: 5});
 
-                 if( d.tooltips[attr_name] != undefined ) {
-                     var tt = new qx.ui.tooltip.ToolTip(d.tooltips[attr_name]);
+                 var descr = schema.attrDescr(attr_name);
+                 if( descr != undefined ) {
+                     var tt = new qx.ui.tooltip.ToolTip(descr);
                      attrLabel.setToolTip(tt);
                  }
                  
@@ -141,7 +143,7 @@ qx.Class.define
 
                  var val = obj.getAttr(attr_name);
                  
-                 if( d.is_boolean[attr_name] ) {
+                 if( schema.isAttrBoolean(attr_name) ) {
                      if( val === "1" ) {
                          val = "true";
                      }
@@ -151,7 +153,7 @@ qx.Class.define
                  }
                  
                  var valLabel;
-                 if ( d.is_objref[attr_name] ) {
+                 if( schema.isAttrObjref(attr_name) ) {
                      valLabel = new spsidgui.ObjectRefWidget();
                      valLabel.setObjectID(val);
                  }
@@ -160,7 +162,7 @@ qx.Class.define
                  }
                  
                  valLabel.setSelectable(true);
-                 if( d.hilite[attr_name] ) {
+                 if( schema.isAttrHilite(attr_name) ) {
                      valLabel.set({font: "bold"});
                  }
                  
@@ -191,22 +193,19 @@ qx.Class.define
                  editButton : true
              };             
 
-             var schema = spsidgui.Application.schema[
-                 obj.getAttr('spsid.object.class')];
+             var schema = spsidgui.Schema.getInstance(
+                 obj.getAttr('spsid.object.class'));
 
-             if( schema != undefined ) {
-                 if( schema['root_object'] && this.containerButton ) {
-                     buttons.containerButton = false;
-                 }
+             if( schema.isRootObject() && this.containerButton ) {
+                 buttons.containerButton = false;
+             }
                  
-                 if( schema['no_children'] && this.contentButton ) {
-                     buttons.contentButton = false;
-                 }
+             if( ! schema.mayHaveChildren() && this.contentButton ) {
+                 buttons.contentButton = false;
+             }
                  
-                 if( schema.display &&
-                     schema.display['read_only'] && this.editButton ) {
-                     buttons.editButton = false;
-                 }
+             if( schema.displayReadOnly() && this.editButton ) {
+                 buttons.editButton = false;
              }
 
              var v = obj.getAttr('spsid_gui.edit.locked');
@@ -237,124 +236,6 @@ qx.Class.define
                  this.getDestroyOnObjectDelete().destroy();
              }
              this.destroy();             
-         }
-     },
-
-     statics :
-     {
-         prepareForDisplay : function (obj) {
-             
-             var attr = obj.getAttrCache();
-             var klass = attr['spsid.object.class'];
-             var d = {};
-             spsidgui.DisplayObject.schemaParams(klass, d);
-
-             var hide = {'spsid.object.id': 1,
-                         'spsid.object.container': 1};
-             
-             var attrnames = new Array;
-             for( var attr_name in attr ) {
-                 if( ! hide[attr_name] ) {
-                     attrnames.push(attr_name);
-                 }
-             }
-             attrnames.sort();
-             d["attrnames"] = attrnames;
-             
-             return(d);
-         },
-
-         schemaParams : function (klass, d) {
-             var schema = spsidgui.Application.schema[klass];
-             var hilite = {};
-             var tooltips = {};
-             var mandatory = {};
-             var is_boolean = {};
-             var default_val = {};
-             var is_objref = {};
-             var objref_class = {};
-             var is_protected = {"spsid.object.class" : true};
-             var is_dictionary = {};
-             var dictionary = {};
-             
-             
-             if( schema != undefined && schema.display != undefined ) {
-                 
-                 if( schema.mandatory != undefined ) {
-                     for (var name in schema.mandatory) {
-                         if( schema.mandatory[name] ) {
-                             mandatory[name] = true;
-                         }
-                     }
-                 }
-                 
-                 if( schema.display.info_attr != undefined ) {
-                     for (var i=0; i< schema.display.info_attr.length; i++) {
-                         hilite[schema.display.info_attr[i]] = true;
-                     }
-                 }
-
-                 if( schema.display.name_attr != undefined ) {
-                     hilite[schema.display.name_attr] = true;
-                 }
-
-                 if( schema.display.attr_help != undefined ) {
-                     for(var name in schema.display.attr_help) {
-                         tooltips[name] = schema.display.attr_help[name];
-                     }
-                 }
-                 
-                 if( schema.display['boolean'] != undefined ) {
-                     for(var name in schema.display['boolean']) {
-                         if( schema.display['boolean'][name] ) {
-                             is_boolean[name] = true;
-                         }
-                     }
-                 }
-                 
-                 if( schema.display['default'] != undefined ) {
-                     for(var name in schema.display['default']) {
-                         default_val[name] = schema.display['default'][name];
-                     }
-                 }
-
-                 if( schema.object_ref != undefined ) {
-                     for(var name in schema.object_ref) {
-                         is_objref[name] = true;
-                         objref_class[name] = schema.object_ref[name];
-                     }
-                 }
-                 
-                 if( schema.display['protected'] != undefined ) {
-                     for(var name in schema.display['protected']) {
-                         if( schema.display['protected'][name] ) {
-                             is_protected[name] = true;
-                         }
-                     }
-                 }
-
-                 if( schema.display['dictionary'] != undefined ) {
-                     for(var name in schema.display['dictionary']) {
-                         var values = schema.display['dictionary'][name];
-                         dictionary[name] = [];
-                         is_dictionary[name] = true;
-                         for(var i=0; i<values.length; i++) {
-                             dictionary[name].push(values[i]);
-                         }
-                     }
-                 }
-             }
-
-             d["hilite"] = hilite;
-             d["tooltips"] = tooltips;
-             d["mandatory"] = mandatory;
-             d["is_boolean"] = is_boolean;
-             d["default_val"] = default_val;
-             d["is_objref"] = is_objref;
-             d["objref_class"] = objref_class;
-             d["is_protected"] = is_protected;
-             d["is_dictionary"] = is_dictionary;
-             d["dictionary"] = dictionary;
          }
      }
  });

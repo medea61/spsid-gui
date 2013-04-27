@@ -136,6 +136,27 @@ qx.Class.define
                  },
                  this,
                  this.getObjectID());
+         },
+
+         getSchema : fuction() {
+             var klass = this.getAttr('spsid.object.class');
+             return(spsidgui.Schema.getInstance(klass));
+         },
+
+         getAttrListForDisplay  : fuction() {
+             var attrnames = new qx.data.Array();
+             var schema = this.getSchema();
+             var attr = this.getAttrCache();
+             for(var attr_name in attr) {
+                 if( ! schema.isAttrHidden(attr_name) ) {
+                     attrnames.push(attr_name);
+                 }
+             }
+             attrnames.sort();
+             return(attrnames);
          }
+             
+             
+             
      }
  });

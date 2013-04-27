@@ -79,7 +79,7 @@ qx.Class.define
              var w = spsidgui.EditObject._newobj_instance;
              w.notifyRefresh = notifyRefresh;
              w.setContainerID(containerID);
-             w._populateClassSelectBox();
+             w._requestClassAndTemplateKeys();
              w._clearEditZone();
              w._populateEditZone();
              w._updateCaption();
@@ -89,26 +89,25 @@ qx.Class.define
          },
 
          classNamesForNewObject : function(containerClass) {
-             var klasses = new qx.data.Array();             
-             var schema = spsidgui.Application.schema;
-             for(var klass in schema) {
-                 if( schema[klass].display != undefined &&
-                     schema[klass].display.sequence != undefined &&
-                     ! schema[klass].display['read_only'] ) {
-                     var possibleContainers = schema[klass]['contained_in'];
-                     if( possibleContainers != undefined ) {
-                         for(var c in possibleContainers) {
-                             if( possibleContainers[c] && c == containerClass ){
-                                 klasses.push(klass);
-                             }
-                         }
-                     }
+             var klasses = new qx.data.Array();
+             var sequences = {};
+             for(var klass in spsidgui.Schema.instances) {
+                 var schema = spsidgui.Schema.instances[klass];
+                 
+                 if( schema.isContainedIn(containerClass) &&
+                     schema.displaySequence() != undefined &&
+                     ! schema.displayReadOnly() )
+                 {
+                     klasses.push(klass);
+                     sequences[klass] = schema.displaySequence();
                  }
              }
 
-             klasses.sort(function(a,b) {
-                 return (schema[a].display.sequence -
-                         schema[b].display.sequence); });
+             klasses.sort(
+                 function(a,b) {
+                     return (sequences[a] - sequences[b]);
+                 }
+             );
              return(klasses);
          },
 
@@ -120,8 +119,10 @@ qx.Class.define
      {
          editZone : null,
          
-         // for new objects: class selector
-         newObjClassSelectBox : null,
+         // for new objects: class and template keys
+         newObjClass : null,
+         newObjTempltateKeys : null,
+         newObjTypeDialogWindow : null,
          
          origAttributes : null,
          editedAttributes : null,
@@ -129,8 +130,6 @@ qx.Class.define
          modified : false,
          invalidAttributes : null,
          
-         attrDisplayProperties : null,
-
          saveButton : null,
          deleteButton : null,
          notifyRefresh : null,
@@ -182,6 +181,7 @@ qx.Class.define
              this.editedAttributes = {};
              this.invalidAttributes = {};
              this.addedAttributes = {};
+             this.templtateKeyAttributes = {};
              
              var buttonsRow = spsidgui.Application.buttonRow();
 
@@ -258,9 +258,34 @@ qx.Class.define
              this.modified = false;
              this.editedAttributes = {};
              this.invalidAttributes = {};
+             this.templtateKeyAttributes = {};
              this.saveButton.setEnabled(false);
          },
 
+         _requestClassAndTemplateKeys : function () {
+             if( this.newObjTypeDialogWindow == undefined ) {
+                 var dw = new spsidgui.DialogWindow('What type?');
+                 this.newObjTypeDialogWindow = dw;
+
+                 var model = new qx.data.Array();
+                 var selectBox = new qx.ui.form.VirtualSelectBox(model);
+                 selectBox.setWidth(200);
+
+                 selectBox.getSelection().addListener(
+                     "change",
+                     function() {
+                         this._clearEditZone();
+                         this._populateEditZone();
+                     },
+                     this);
+                 
+                 var classZone =
+                     new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
+                 classZone.add(new qx.ui.basic.Label("Object class:"));
+                 classZone.add(selectBox);
+                 box.add(classZone);
+
+         },
          
          _populateClassSelectBox : function () {
 
@@ -280,13 +305,12 @@ qx.Class.define
          _populateEditZone : function() {
 
              var editZone = this.editZone;
-
-             var d;
              var origAttributes = {};
              
              if( this.isNewObject() ) {
                  var sel = this.newObjClassSelectBox.getSelection();
-                 d = {};
+                 var objclass = sel.getItem(0);
+                 
                  spsidgui.DisplayObject.schemaParams(sel.getItem(0), d);
                  for(var key in d) {
                      for(var attr_name in d[key]) {
@@ -492,7 +516,7 @@ qx.Class.define
                                  e.getTarget().getUserData("valWidget");
                              var objclass =
                                  e.getTarget().getUserData("objClass");
-                             spsidgui.SelectObject.openInstance(
+                             spsidgui.SelectObjectDW.openInstance(
                                  widget, objclass, this);
                          },
                          this);

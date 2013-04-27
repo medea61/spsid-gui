@@ -3,7 +3,7 @@
 */
 
 qx.Class.define
-("spsidgui.SelectObject",
+("spsidgui.SelectObjectDW",
  {
      extend : spsidgui.DialogWindow,
 
@@ -18,11 +18,12 @@ qx.Class.define
          _instance : null,
 
          openInstance : function(widget, objclass, parent) {
-             if( ! spsidgui.SelectObject._instance ) {
-                 spsidgui.SelectObject._instance = new spsidgui.SelectObject;
+             if( ! spsidgui.SelectObjectDW._instance ) {
+                 spsidgui.SelectObjectDW._instance =
+                     new spsidgui.SelectObjectDW;
              }
 
-             var w = spsidgui.SelectObject._instance;
+             var w = spsidgui.SelectObjectDW._instance;
 
              w.setUpdateWidget(widget);
              w.setObjclass(objclass);

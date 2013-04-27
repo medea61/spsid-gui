@@ -17,10 +17,7 @@ qx.Class.define
              this.addMenuBar(root);
 
              // retrieve SPSID object schema
-             var rpc = spsidgui.SpsidRPC.getInstance();
-             rpc.get_schema(function(target, result) {
-                 spsidgui.Application.schema = result;
-             }, {});
+             spsidgui.Schema.load();
          },
 
          // Top-level toolbar         
@@ -42,24 +39,21 @@ qx.Class.define
              var rootButton =
                  new qx.ui.toolbar.Button("Root");
              rootButton.addListener("execute", function() {
-                 if( ! spsidgui.Application.schema ) {
+                 var klass = spsidgui.Schema.getRootObjectClass();
+                 if( klass == null ){
                      return;
                  }
                  
-                 for(var klass in spsidgui.Application.schema) {
-                     if( spsidgui.Application.schema[klass]['root_object'] ) {
-                         var rpc = spsidgui.SpsidRPC.getInstance();
-                         rpc.search_objects(
-                             function(target, result) {
-                                 if( result.length > 0 ) {
-                                     var oid = result[0]['spsid.object.id'];
-                                     spsidgui.ObjectWindow.openInstance(oid);
-                                 }
-                             },
-                             {},
-                             'NIL', klass);
-                     }
-                 }
+                 var rpc = spsidgui.SpsidRPC.getInstance();
+                 rpc.search_objects(
+                     function(target, result) {
+                         if( result.length > 0 ) {
+                             var oid = result[0]['spsid.object.id'];
+                             spsidgui.ObjectWindow.openInstance(oid);
+                         }
+                     },
+                     {},
+                     'NIL', klass);
              });
              part1.add(rootButton);
 
@@ -119,8 +113,6 @@ qx.Class.define
      },
 
      statics : {
-         schema : null,
-
          buttonRow : function() {
              var row =
                  new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
