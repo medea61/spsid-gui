@@ -123,7 +123,7 @@ qx.Class.define
              }
              return(attr[name]);
          },
-
+         
          deleteObject : function() {
              var rpc = spsidgui.SpsidRPC.getInstance();
              rpc.delete_object(
@@ -137,13 +137,13 @@ qx.Class.define
                  this,
                  this.getObjectID());
          },
-
-         getSchema : fuction() {
+         
+         getSchema : function() {
              var klass = this.getAttr('spsid.object.class');
              return(spsidgui.Schema.getInstance(klass));
          },
 
-         getAttrListForDisplay  : fuction() {
+         getAttrListForDisplay  : function() {
              var attrnames = new qx.data.Array();
              var schema = this.getSchema();
              var attr = this.getAttrCache();
@@ -155,8 +155,5 @@ qx.Class.define
              attrnames.sort();
              return(attrnames);
          }
-             
-             
-             
      }
  });

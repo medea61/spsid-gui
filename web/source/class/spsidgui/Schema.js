@@ -157,11 +157,25 @@ qx.Class.define
          },
 
          isAttrDictionary : function(attr_name) {
-             return( this.attrProperty(attr_name, 'dictionary') != undefined );
+             var val = this.attrProperty(attr_name, 'dictionary');
+             if( val != undefined ) {
+                 qx.core.Assert.assert(
+                     Array.isArray(val),
+                     'dictionary property of ' + attr_name +
+                         ' is not an array');
+                 qx.core.Assert.assert(
+                     (val.getLength() > 0),
+                     'dictionary property of ' + attr_name +
+                         ' is an empty array');
+                 return(true);
+             }
+             return(false);
          },
 
          getAttrDictionary : function(attr_name) {
-             return( this.attrProperty(attr_name, 'dictionary') );
+             var ret = new qx.type.Array();
+             ret.append(this.attrProperty(attr_name, 'dictionary'));
+             return(ret);
          },
              
          isAttrBoolean : function(attr_name) {
@@ -179,8 +193,14 @@ qx.Class.define
          },
          
          isAttrTemplateKey : function(attr_name) {
-             return( this.attrProperty(attr_name, 'templatekey') ?
-                     true : false );
+             if( this.attrProperty(attr_name, 'templatekey') ) {
+                 qx.core.Assert.assert(
+                     this.isAttrDictionary(attr_name),
+                     attr_name + " is a template key, but not a " +
+                         "dictionary attribute");
+                 return(true);
+             }
+             return(false);
          },
          
          isAttrTemplateMember : function(attr_name) {
@@ -188,17 +208,20 @@ qx.Class.define
                  this.attrProperty(attr_name, 'templatemember') != undefined );
          },
 
-         isAttrActiveTemplateMember : function(attr_name, keyattr, keyval) {
+         isAttrActiveTemplateMember : function(attr_name, templatekeys) {
              var tmplmap = this.attrProperty(attr_name, 'templatemember');
              qx.core.Assert.assertNotNull(
                  tmplmap,
                  "isAttrActiveTemplateMember() is called on a " +
                      "non-templatemember attribute");
 
-             if( tmplmap[keyattr] != undefined ) {
-                 for(var i=0; i < tmplmap[keyattr].length; i++) {
-                     if( tmplmap[keyattr][i] == keyval ) {
-                         return(true);
+             for(var keyattr in templatekeys) {
+                 var keyval = templatekeys[keyattr];
+                 if( tmplmap[keyattr] != undefined ) {
+                     for(var i=0; i < tmplmap[keyattr].length; i++) {
+                         if( tmplmap[keyattr][i] == keyval ) {
+                             return(true);
+                         }
                      }
                  }
              }
@@ -220,7 +243,7 @@ qx.Class.define
          },
 
          getAttributeNames : function() {
-             var ret = new qx.data.Array();
+             var ret = new qx.type.Array();
              for(var attr_name in this.getSchema()['attr']) {
                  ret.push(attr_name);
              }
