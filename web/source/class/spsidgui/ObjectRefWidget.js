@@ -10,10 +10,12 @@ qx.Class.define
      destruct : function()
      {
          var objID = this.getObjectID();
-         var obj = spsidgui.SpsidObject.getInstance(objID);
-         if( obj != undefined ) {
-             obj.removeListener("loaded", this._onObjectLoaded, this);
-             obj.removeListener("deleted", this._onObjectDeleted, this);
+         if( objID != undefined && objID != 'NIL' ) {
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             if( obj != undefined ) {
+                 obj.removeListener("loaded", this._onObjectLoaded, this);
+                 obj.removeListener("deleted", this._onObjectDeleted, this);
+             }
          }
      },
 

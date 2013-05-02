@@ -56,24 +56,34 @@ qx.Class.define
              topRow.add(classList, {row: 0, column: 1});
 
              // get the list of classes for searching
-             var schema = spsidgui.Application.schema;
-             var filtered = new Array;
-             for (var klass in schema) {
-                 if(schema[klass].display &&
-                    schema[klass].display.sequence) {
-                     filtered.push(klass);
+             var klasses = new qx.data.Array();
+             var sequences = {};
+             var descriptions = {};
+             spsidgui.Schema.enumerate(
+                 function(schema) {
+                     if( schema.hasDisplay() && 
+                         schema.displaySequence() != undefined )
+                     {
+                         var klass = schema.getObjclass();
+                         klasses.push(klass);
+                         sequences[klass] = schema.displaySequence();
+                         descriptions[klass] = schema.displayDescr();
+                     }
+                     return(true);
+                 });
+             
+             klasses.sort(
+                 function(a,b) {
+                     return (sequences[a] - sequences[b]);
                  }
-             }
+             );
              
-             filtered.sort(function(a,b) {
-                 return (schema[a].display.sequence -
-                         schema[b].display.sequence); });
-             
-             for (var i=0; i < filtered.length; i++) {
+             for (var i=0; i < klasses.length; i++) {
+                 var klass = klasses.getItem(i);
                  model.push(
                      qx.data.marshal.Json.createModel({
-                         classDescr : schema[filtered[i]].display.class_descr,
-                         className : filtered[i]}));
+                         classDescr : descriptions[klass],
+                         className : klass}));
              }
              
              topRow.add(new qx.ui.basic.Label("by prefix"),

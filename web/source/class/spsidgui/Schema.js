@@ -19,9 +19,12 @@ qx.Class.define
          instances : null,
          rootObjectClass : null,
          alwaysHidden : {
-             'spsid.object.id': true,
-             'spsid.object.container': true
+             'spsid.object.id' : true,
+             'spsid.object.container' : true
          },         
+         alwaysProtected : {
+             'spsid.object.class' : true
+         },
 
          load : function () {
              qx.core.Assert.assertNull(
@@ -62,6 +65,15 @@ qx.Class.define
 
          getRootObjectClass : function() {
              return(spsidgui.Schema.rootObjectClass);
+         },
+
+         enumerate : function(handler) {
+             for(var klass in spsidgui.Schema.instances) {
+                 var schema = spsidgui.Schema.instances[klass];
+                 if( ! handler(schema) ) {
+                     break;
+                 }
+             }
          }
      },
 
@@ -146,7 +158,8 @@ qx.Class.define
          },
          
          isAttrProtected : function(attr_name) {
-             return( this.attrProperty(attr_name, 'protected') ?
+             return( (spsidgui.Schema.alwaysProtected[attr_name] ||
+                      this.attrProperty(attr_name, 'protected') ) ?
                      true : false );
          },
          
@@ -164,7 +177,7 @@ qx.Class.define
                      'dictionary property of ' + attr_name +
                          ' is not an array');
                  qx.core.Assert.assert(
-                     (val.getLength() > 0),
+                     (val.length > 0),
                      'dictionary property of ' + attr_name +
                          ' is an empty array');
                  return(true);

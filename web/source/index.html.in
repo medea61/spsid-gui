@@ -8,7 +8,7 @@
   window.qx =
   {
     $$environment : {
-        "spsidgui.db.url" : "@dburl@",
+       "spsidgui.db.url" : "@dburl@"
     }
   }
   </script>

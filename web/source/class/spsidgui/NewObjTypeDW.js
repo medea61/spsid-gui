@@ -5,6 +5,7 @@ qx.Class.define
 
      construct : function() {
          this.base(arguments);
+         this.templateAttrSelectors = new qx.type.Array();
          this._initWidgets();
      },
 
@@ -22,20 +23,21 @@ qx.Class.define
              w.setParentWindow(parent);
              w.setCaption('Type for a new object');
 
-             if( w.getContainerObjclass() != containerObjclass ) {
+             if( w.getContainerObjclass() != containerObjclass )
+             {
                  w.setContainerObjclass(containerObjclass);
                  w._populateClassSelector();
                  w._populateTemplateSelectors();
              }
-
-             if( w.classSelectBox.getModel().length() == 1 &&
-                 w.templateAttrSelectors.length() == 0 ) {
+             
+             if( w.classSelectBox.getModel().getLength() == 1 &&
+                 w.templateAttrSelectors.length == 0 ) {
                  w._onOk();
              }
              else {
-                 w.positionAndOpen(parent, 400, 350);
+                 w.positionAndOpen(parent, 400, 150);
              }
-             
+
              return(w);
          }
      },
@@ -58,21 +60,21 @@ qx.Class.define
          classSelectBox : null,
          templateAttrComposite : null,
          templateAttrSelectors : null,
-         
+
          _initWidgets : function() {
 
              var model = new qx.data.Array();
              var selectBox = this.classSelectBox =
                  new qx.ui.form.VirtualSelectBox(model);
              selectBox.setWidth(200);
-             
+
              selectBox.getSelection().addListener(
                  "change",
                  function() {
                      this._populateTemplateSelectors();
                  },
                  this);
-             
+
              var classZone =
                  new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
              classZone.add(new qx.ui.basic.Label("Object class:"));
@@ -89,14 +91,14 @@ qx.Class.define
              this.add(this.templateAttrComposite, {flex: 1});
 
              var buttonsRow = spsidgui.Application.buttonRow();
-             
+
              var okButton = this.okButton = new qx.ui.form.Button("Ok");
              okButton.addListener(
                  "execute",
                  function() { this._onOk() },
                  this);
              buttonsRow.add(okButton);
-             
+
              var cancelButton = new qx.ui.form.Button("Cancel");
              cancelButton.addListener(
                  "execute",
@@ -109,7 +111,7 @@ qx.Class.define
              this.add(buttonsRow);
          },
 
-         
+
          _populateClassSelector : function() {
              var model = this.classSelectBox.getModel();
              model.removeAll();
@@ -117,43 +119,46 @@ qx.Class.define
              var containerClass = this.getContainerObjclass();
              var klasses = new qx.data.Array();
              var sequences = {};
-             for(var klass in spsidgui.Schema.instances) {
-                 var schema = spsidgui.Schema.instances[klass];
-                 
-                 if( schema.isContainedIn(containerClass) &&
-                     schema.displaySequence() != undefined &&
-                     ! schema.displayReadOnly() )
-                 {
-                     klasses.push(klass);
-                     sequences[klass] = schema.displaySequence();
-                 }
-             }
-
+             spsidgui.Schema.enumerate(
+                 function(schema) {
+                     if( schema.isContainedIn(containerClass) &&
+                         schema.displaySequence() != undefined &&
+                         ! schema.displayReadOnly() )
+                     {
+                         var klass = schema.getObjclass();
+                         klasses.push(klass);
+                         sequences[klass] = schema.displaySequence();
+                     }
+                     return(true);
+                 });
+             
              klasses.sort(
                  function(a,b) {
                      return (sequences[a] - sequences[b]);
                  }
              );
-
+             
              model.append(klasses);
          },
 
-         
+
          _populateTemplateSelectors : function() {
-             this.templateAttrSelectors = new qx.type.Array();             
+             var objclass = this.classSelectBox.getSelection().getItem(0);
+             if( objclass == undefined ) {
+                 return;
+             }
+             
+             this.templateAttrSelectors.removeAll();
              var removed = this.templateAttrComposite.removeAll();
              for(var i=0; i<removed.length; i++) {
                  removed[i].dispose();
              }
-             
-             var objclass = this.classSelectBox.getSelection().getItem(0);
-             var schema = spsidgui.Schema.getInstance(objclass);
 
+             var schema = spsidgui.Schema.getInstance(objclass);
              var nRow = 0;
-             
              var attrnames = schema.getAttributeNames();
-             for(var i=0; i<attrnames.length(); i++) {
-                 var attr_name = attrnames.getItem(i);
+             for(var i=0; i<attrnames.length; i++) {
+                 var attr_name = attrnames[i];
                  if( schema.isAttrTemplateKey(attr_name) ) {
 
                      var attrLabel = new qx.ui.basic.Label(attr_name);
@@ -165,37 +170,39 @@ qx.Class.define
                          var tt = new qx.ui.tooltip.ToolTip(descr);
                          attrLabel.setToolTip(tt);
                      }
-                     
+
                      this.templateAttrComposite.add(
                          attrLabel, {row: nRow, column: 0});
-                     
+
                      var dict = schema.getAttrDictionary(attr_name);
-                         
-                     var selectBox = 
+                     dict = new qx.data.Array(dict);
+                     
+                     var selectBox =
                          new qx.ui.form.VirtualSelectBox(dict);
                      selectBox.setWidth(200);
                      selectBox.setUserData('attr_name', attr_name);
                      this.templateAttrSelectors.push(selectBox);
-                     
+
                      this.templateAttrComposite.add(
                          selectBox, {row: nRow, column: 1});
                  }
              }
          },
 
-         
+
          _onOk : function() {
              var objclass = this.classSelectBox.getSelection().getItem(0);
-             
+
              var templatekeys = {};
-             for(var i=0; i<this.templateAttrSelectors.length(); i++) {
-                 var selectBox = this.templateAttrSelectors.getItem(i);
+             for(var i=0; i<this.templateAttrSelectors.length; i++) {
+                 var selectBox = this.templateAttrSelectors[i];
                  var attr_name = selectBox.getUserData('attr_name');
                  var val = selectBox.getSelection().getItem(0);
                  templatekeys[attr_name] = val;
              }
-             
+
              this.getParentWindow().setNewObjType(objclass, templatekeys);
+             this.close();
          }
      }
  });

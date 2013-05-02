@@ -18,11 +18,13 @@ qx.Class.define
      destruct : function()
      {
          var objID = this.getObjectID();
-         var obj = spsidgui.SpsidObject.getInstance(objID);
-         if( obj != undefined ) {
-             obj.removeListener("loaded", this._onObjectLoaded, this);
-             obj.removeListener("deleted", this._onObjectDeleted, this);
-         }
+         if( objID != undefined ) {
+             var obj = spsidgui.SpsidObject.getInstance(objID);
+             if( obj != undefined ) {
+                 obj.removeListener("loaded", this._onObjectLoaded, this);
+                 obj.removeListener("deleted", this._onObjectDeleted, this);
+             }
+         }             
      },
 
      properties : {
@@ -80,11 +82,6 @@ qx.Class.define
              w.notifyRefresh = notifyRefresh;
              w.setContainerID(containerID);
              w._requestClassAndTemplateKeys();
-             w._clearEditZone();
-             w._populateEditZone();
-             w._updateCaption();
-             w.open();
-             w.setStatus("Fill in the attribute values for a new object");
              return(w);
          },
 
@@ -99,7 +96,6 @@ qx.Class.define
          // for new objects: class and template keys
          newObjClass : null,
          newObjTempltateKeys : null,
-         newObjTypeDialogWindow : null,
          
          origAttributes : null,
          editedAttributes : null,
@@ -218,18 +214,20 @@ qx.Class.define
          },
 
          _requestClassAndTemplateKeys : function () {
-             if( this.newObjTypeDialogWindow == undefined ) {
-                 var dw = new spsidgui.NewObjTypeDW();
-                 this.newObjTypeDialogWindow = dw;
-             }
-
-             var dw = this.newObjTypeDialogWindow;
-             dw.openInstance(this.getContainerID(), this);
+             var containerID = this.getContainerID();
+             var cntr = spsidgui.SpsidObject.getInstance(containerID);
+             var containerClass = cntr.getAttr('spsid.object.class');
+             spsidgui.NewObjTypeDW.openInstance(containerClass, this);
          },
 
          setNewObjType : function(objclass, templatekeys) {
              this.newObjClass = objclass;
              this.newObjTempltateKeys = templatekeys;
+             this._clearEditZone();
+             this._populateEditZone();
+             this._updateCaption();
+             this.open();
+             this.setStatus("Fill in the attribute values for a new object");
          },
                   
          _populateEditZone : function() {
@@ -248,8 +246,8 @@ qx.Class.define
                  
                  var schema = spsidgui.Schema.getInstance(objclass);
                  var attrnames = schema.getAttributeNames();
-                 for(var i=0; i<attrnames.length(); i++) {
-                     var attr_name = attrnames.getItem(i);
+                 for(var i=0; i<attrnames.length; i++) {
+                     var attr_name = attrnames[i];
 
                      if( origAttributes[attr_name] == undefined &&
                          (! schema.isAttrTemplateMember(attr_name) ||
@@ -263,11 +261,13 @@ qx.Class.define
                              val = 'NIL';
                          }
                          else {
-                             val = schema.getAttrDefaultVal();
+                             val = schema.getAttrDefaultVal(attr_name);
                              if( val == undefined ) {
                                  val = "";
                              }
                          }
+                         
+                         origAttributes[attr_name] = val;
                      }
                  }
              }
@@ -276,7 +276,7 @@ qx.Class.define
                  var objID = this.getObjectID();
                  var obj = spsidgui.SpsidObject.getInstance(objID);
                  var attrnames = obj.getAttrListForDisplay();
-                 for( var i=0; i<attrnames.length(); i++) {
+                 for( var i=0; i<attrnames.length; i++) {
                      var attr_name = attrnames[i];
                      origAttributes[attr_name] = obj.getAttr(attr_name);
                  }
@@ -345,20 +345,47 @@ qx.Class.define
              editZone.add(attrLabel, {row: nRow, column: 0});
              
              var valWidget;
-             if( schema.isAttrProtected(attr_name) ) {
+             var is_checkbox = false;
+             var is_selectbox = false;
+             var is_objref = false;
+             var is_textfield = false;
+             
+             if( schema.isAttrObjref(attr_name) ) {
+                 if( val == "" ) {
+                     val = 'NIL';
+                 }
+                 valWidget = new spsidgui.ObjectRefWidget();
+                 valWidget.setObjectID(val);
+                 is_objref = true;
+                 
+                 valWidget.addListener(
+                     "changeObjectID",
+                     function(e)
+                     {
+                         var field = e.getTarget();
+                         this._fieldValueChanged(e.getData(), field);
+                     },
+                     this);
+             }
+             else if( schema.isAttrProtected(attr_name) ||
+                      schema.isAttrTemplateKey(attr_name) ) {
                  valWidget = new qx.ui.basic.Label(val);
              }
              else if( schema.isAttrBoolean(attr_name) ) {
                  val = (val == 0 ? "0":"1");
                  valWidget = new qx.ui.form.CheckBox();
                  valWidget.setValue(val === "1" ? true:false);
-             }
-             else if( schema.isAttrObjref(attr_name) ) {
-                 if( val == "" ) {
-                     val = 'NIL';
-                 }
-                 valWidget = new spsidgui.ObjectRefWidget();
-                 valWidget.setObjectID(val);                 
+                 is_checkbox = true;
+                 
+                 valWidget.addListener(
+                     "changeValue",
+                     function(e)
+                     {
+                         var field = e.getTarget();
+                         var val = (e.getData() ? "1":"0");
+                         this._fieldValueChanged(val, field);
+                     },
+                     this);
              }
              else if( schema.isAttrDictionary(attr_name) ) {
                  var model = new qx.data.Array();
@@ -366,84 +393,62 @@ qx.Class.define
                  valWidget = new qx.ui.form.VirtualSelectBox(model);
                  valWidget.getSelection().push(val);
                  valWidget.setUserData("isSelectBox", true);
+                 is_selectbox = true;
+
+                 valWidget.getSelection().addListener(
+                     "change",
+                     function(e)
+                     {
+                         this._fieldValueChanged(
+                             valWidget.getSelection().getItem(0),
+                             valWidget);
+                     },
+                     this);
              }
              else {
                  valWidget = new qx.ui.form.TextField(val);
+                 is_textfield = true;
                  valWidget.setLiveUpdate(true);
                  if( schema.isAttrMandatory(attr_name) ) {
                      valWidget.setUserData("mandatory", true);
                  }
+                 
+                 valWidget.addListener(
+                     "changeValue",
+                     function(e)
+                     {
+                         var field = e.getTarget();
+                         var val = e.getData();
+                         var attr_name = field.getUserData("attrName");
+                         if( val == "" && field.getUserData("mandatory") ) {
+                             var msg =
+                                 "Must provide a value for " +
+                                 "mandatory attribute";
+                             field.setInvalidMessage(msg);
+                             field.setValid(false);
+                             this.invalidAttributes[attr_name] = true;
+                             this.setStatus(msg);
+                         }
+                         else {
+                             field.setValid(true);
+                             this.invalidAttributes[attr_name] = false;
+                             this.setStatus("");
+                         }
+                         
+                         this._fieldValueChanged(val, field);
+                     },
+                     this);
              }
                  
              valWidget.setUserData("origValue", val);
              valWidget.setUserData("attrName", attr_name);
 
-             if( ! schema.isAttrProtected(attr_name) ) {
-                 if( schema.isAttrBoolean(attr_name) ) {
-                     valWidget.addListener(
-                         "changeValue",
-                         function(e)
-                         {
-                             var field = e.getTarget();
-                             var val = (e.getData() ? "1":"0");
-                             this._fieldValueChanged(val, field);
-                         },
-                         this);
-                 }
-                 else if( schema.isAttrObjref(attr_name) ) {
-                     valWidget.addListener(
-                         "changeObjectID",
-                         function(e)
-                         {
-                             var field = e.getTarget();
-                             this._fieldValueChanged(e.getData(), field);
-                         },
-                         this);
-                 }
-                 else if( schema.isAttrDictionary(attr_name) ) {
-                     valWidget.getSelection().addListener(
-                         "change",
-                         function(e)
-                         {
-                             this._fieldValueChanged(
-                                 valWidget.getSelection().getItem(0),
-                                 valWidget);
-                         },
-                         this);
-                 }
-                 else {
-                     valWidget.addListener(
-                         "changeValue",
-                         function(e)
-                         {
-                             var field = e.getTarget();
-                             var val = e.getData();
-                             var attr_name = field.getUserData("attrName");
-                             if( val == "" && field.getUserData("mandatory") ) {
-                                 var msg =
-                                     "Must provide a value for " +
-                                     "mandatory attribute";
-                                 field.setInvalidMessage(msg);
-                                 field.setValid(false);
-                                 this.invalidAttributes[attr_name] = true;
-                                 this.setStatus(msg);
-                             }
-                             else {
-                                 field.setValid(true);
-                                 this.invalidAttributes[attr_name] = false;
-                                 this.setStatus("");
-                             }
-                             
-                             this._fieldValueChanged(val, field);
-                         },
-                         this);
-                     
-                     valWidget.fireNonBubblingEvent(
-                         "changeValue", qx.event.type.Data, [val, val]);
-                 }
+             if( is_textfield ) {
+                 valWidget.fireNonBubblingEvent(
+                     "changeValue", qx.event.type.Data, [val, val]);
              }
-
-             if ( schema.isAttrObjref(attr_name) ) {
+             
+             if( is_objref ) {
                  var valComposite = new qx.ui.container.Composite(
                      new qx.ui.layout.HBox(8));
                  valComposite.add(valWidget);
@@ -498,10 +503,6 @@ qx.Class.define
                  if( ! this.modified ) {
                      this.modified = true;
                      this._updateCaption();
-                     if( this.isNewObject() ) {
-                         this.newObjClassSelectBox.setEnabled(
-                             false);
-                     }
                  }
              }
              else {
@@ -516,9 +517,6 @@ qx.Class.define
                      this.editedAttributes).length == 0 ) {
                      this.modified = false;
                      this._updateCaption();
-                     if( this.isNewObject() ) {
-                         this.newObjClassSelectBox.setEnabled(true);
-                     }
                  }
              }
              
@@ -548,7 +546,9 @@ qx.Class.define
                      str += "[edited] ";
                  }
                  
-                 str += 'New object inside ' +
+                 str += 'New ' +
+                     this.origAttributes['spsid.object.class'] +
+                     ' inside ' +
                      cntr.getAttr('spsid.object.class') + ' ' +
                      cntr.getObjectName();
              }
@@ -660,31 +660,35 @@ qx.Class.define
              nameCombo.setValue("");
 
              // populate the combo with attrnames that are not in the object
-             var attrs = {};
-             if( ! this.isNewObject() ) {
-                 var objID = this.getObjectID();
-                 var obj = spsidgui.SpsidObject.getInstance(objID);
-                 var klass = obj.getAttr('spsid.object.class');
-                 var d = {};
-                 spsidgui.DisplayObject.schemaParams(klass, d);
-                 for(var key in d) {
-                     for(var attr_name in d[key]) {
-                         if( ! d.is_protected[attr_name] &&
-                             this.origAttributes[attr_name] == undefined &&
-                             ! this.addedAttributes[attr_name])
-                         {
-                             attrs[attr_name] = true;
-                         }
-                     }
+             var attrs = new qx.type.Array();
+             var schema = spsidgui.Schema.getInstance(
+                 this.origAttributes['spsid.object.class']);
+             var attrnames = schema.getAttributeNames();
+             var templatekeys = {};
+             for(var i=0; i<attrnames.length; i++) {
+                 var attr_name = attrnames[i];
+                 if( schema.isAttrTemplateKey(attr_name) ) {
+                     templatekeys[attr_name] = this.origAttributes[attr_name];
                  }
              }
              
-             var attrnames = nameCombo.getModel();
-             attrnames.removeAll();
-             for(var attr_name in attrs) {
-                 attrnames.push(attr_name);
+             for(var i=0; i<attrnames.length; i++) {
+                 var attr_name = attrnames[i];
+                 
+                 if( ! schema.isAttrProtected(attr_name) &&
+                     (! schema.isAttrTemplateMember(attr_name) ||
+                      schema.isAttrActiveTemplateMember(
+                          attr_name, templatekeys) ) &&
+                     this.origAttributes[attr_name] == undefined &&
+                     ! this.addedAttributes[attr_name] )
+                 {
+                     attrs.push(attr_name);
+                 }
              }
-             attrnames.sort();
+             
+             var model = nameCombo.getModel();
+             model.removeAll();
+             model.append(attrs);
              
              dw.positionAndOpen(this, 400, 50);
              nameCombo.focus();
@@ -695,8 +699,7 @@ qx.Class.define
 
              var attr = {};
              if( this.isNewObject() ) {
-                 var sel = this.newObjClassSelectBox.getSelection();
-                 attr['spsid.object.class'] = sel.getItem(0);
+                 attr['spsid.object.class'] = this.newObjClass;
                  attr['spsid.object.container'] = this.getContainerID();
                  var origAttributes = this.origAttributes;
                  for(var attr_name in origAttributes) {

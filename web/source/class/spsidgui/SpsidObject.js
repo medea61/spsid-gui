@@ -79,33 +79,33 @@ qx.Class.define
          },
 
          _initObjectName : function() {
-             var attr = this.getAttrCache();
-             if( attr == undefined ) {
+
+             if( ! this.isReady() ) {
                  return;
              }
 
-             var klass = attr['spsid.object.class'];
-             var schema = spsidgui.Application.schema[klass];
+             var schema = this.getSchema();
              
-             if( schema != undefined &&
-                 schema.display != undefined &&
-                 schema.display.name_attr != undefined &&
-                 attr[schema.display.name_attr] != undefined ) {
-                 
-                 this.setObjectName(attr[schema.display.name_attr]);
+             if( schema.hasDisplay() &&
+                 schema.displayNameAttribute() != undefined )
+             {
+                 this.setObjectName(
+                     this.getAttr(schema.displayNameAttribute()));
                  return;
              }
              
-             if( attr['spsid.object.container'] == 'NIL' ) {
+             if( this.getAttr('spsid.object.container') == 'NIL' ) {
                  this.setObjectName("Root Object");
                  return;
              }
+             
+             this.setObjectName(this.getObjectID());
          },
 
          newAttrCache : function(attr) {
              this.setAttrCache(attr);
-             this._initObjectName();
              this.setReady(true);
+             this._initObjectName();
              this.fireDataEvent("loaded");
          },
              
@@ -144,7 +144,7 @@ qx.Class.define
          },
 
          getAttrListForDisplay  : function() {
-             var attrnames = new qx.data.Array();
+             var attrnames = new qx.type.Array();
              var schema = this.getSchema();
              var attr = this.getAttrCache();
              for(var attr_name in attr) {

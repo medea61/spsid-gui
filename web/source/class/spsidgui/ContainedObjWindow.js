@@ -89,11 +89,19 @@ qx.Class.define
                      spsidgui.EditObject.openNewObjInstance(oid, notify);
                  });
              // check if objects can be actually created within this class
-             var klasses = spsidgui.EditObject.classNamesForNewObject(
-                 obj.getAttr('spsid.object.class'));
-             if( klasses.length == 0 ) {
-                 addButton.setEnabled(false);
-             }
+             var containerClass = obj.getAttr('spsid.object.class');
+             var found = false;
+             spsidgui.Schema.enumerate(
+                 function(schema) {
+                     if( schema.isContainedIn(containerClass) &&
+                         schema.displaySequence() != undefined &&
+                         ! schema.displayReadOnly() )
+                     {
+                         found = true;
+                     }
+                     return(!found);
+                 });             
+             addButton.setEnabled(found);             
              addButton.setToolTip(new qx.ui.tooltip.ToolTip(
                  "Add a new contained object"));
 

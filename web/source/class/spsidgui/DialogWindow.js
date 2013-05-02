@@ -54,6 +54,10 @@ qx.Class.define
          positionAndOpen : function(parent, width, height) {
 
              var bounds = parent.getBounds();
+             if( bounds == undefined ) {
+                 bounds = spsidgui.AppWindow.desktop.getBounds();
+             }
+             
              var centerX = Math.round(bounds.left + bounds.width/2);
              var centerY = Math.round(bounds.top + bounds.height/2);
 
