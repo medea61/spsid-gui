@@ -412,6 +412,11 @@ qx.Class.define
                  if( schema.isAttrMandatory(attr_name) ) {
                      valWidget.setUserData("mandatory", true);
                  }
+
+                 var re = schema.getAttrRegexp(attr_name);
+                 if( re != undefined ) {
+                     valWidget.setUserData("regexp", re);
+                 }
                  
                  valWidget.addListener(
                      "changeValue",
@@ -420,6 +425,7 @@ qx.Class.define
                          var field = e.getTarget();
                          var val = e.getData();
                          var attr_name = field.getUserData("attrName");
+                         var invalid = false;
                          if( val == "" && field.getUserData("mandatory") ) {
                              var msg =
                                  "Must provide a value for " +
@@ -428,8 +434,26 @@ qx.Class.define
                              field.setValid(false);
                              this.invalidAttributes[attr_name] = true;
                              this.setStatus(msg);
+                             invalid = true;
                          }
                          else {
+                             var re = field.getUserData("regexp");
+                             if( val != "" && re != undefined ) {
+                                 re = new RegExp(re);
+                                 if( ! re.test(val) ) {
+                                     var msg =
+                                         "Must match the regular expression: " +
+                                         re;
+                                     field.setInvalidMessage(msg);
+                                     field.setValid(false);
+                                     this.invalidAttributes[attr_name] = true;
+                                     this.setStatus(msg);
+                                     invalid = true;
+                                 }
+                             }
+                         }
+
+                         if( ! invalid ) {
                              field.setValid(true);
                              this.invalidAttributes[attr_name] = false;
                              this.setStatus("");

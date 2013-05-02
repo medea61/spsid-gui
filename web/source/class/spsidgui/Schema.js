@@ -255,6 +255,19 @@ qx.Class.define
              return( (ret != undefined) ? ret : {} );
          },
 
+         getAttrRegexp : function(attr_name) {
+             return( this.attrProperty(attr_name, 'regexp') );
+         },
+         
+         checkAttrValue : function(attr_name, value) {
+             var re = this.attrProperty(attr_name, 'regexp');
+             if( re != undefined ) {
+                 re = new RegExp(re);
+                 return(re.test(value));
+             }
+             return(true);
+         },
+
          getAttributeNames : function() {
              var ret = new qx.type.Array();
              for(var attr_name in this.getSchema()['attr']) {
