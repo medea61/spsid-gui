@@ -4,13 +4,7 @@ torrus.port.nodeid would be derived from siam.svcc.inventory_id
 
 Values derived from other objects: torrus.port.name
 
-Values from a catalog:
-siam.svc.type
-siam.svc.product_name
-
-
-
-
+Numeric attributes need a verification
 
 
 
