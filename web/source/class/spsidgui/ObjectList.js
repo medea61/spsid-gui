@@ -1,28 +1,44 @@
 qx.Class.define
 ("spsidgui.ObjectList",
  {
-     extend : qx.ui.container.Scroll,
+     extend : qx.ui.container.Composite, 
      
      construct : function() {
 
          this.base(arguments);
-         
+
+         this.setLayout(new qx.ui.layout.VBox(5));
+
+         this.scroll = new qx.ui.container.Scroll();
          this.contentWidget =
              new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-         this.add(this.contentWidget);
+         this.scroll.add(this.contentWidget);
+
+         this.add(this.scroll, {flex : 1});
      },
 
      properties : {
          objectList :  {
              check: "Array",
-             nullable : true,
-             apply : "_applyObjectList"
-         }         
+             nullable : true
+         },
+
+         pageSize : {
+             check : "Integer",
+             init : 10
+         }
      },
      
      members :
      {
+         paginationBar : null,
+         paginationLabel : null,
+         scroll : null,
          contentWidget : null,
+
+         pagination : null,
+         paginationStart : null,
+         paginationEnd : null,
 
          setAttrList : function (list) {
 
@@ -38,18 +54,51 @@ qx.Class.define
                  return(a.getObjectName().localeCompare(b.getObjectName()));
              });
 
+             if( list.length > this.getPageSize() )
+             {
+                 this.pagination = true;
+                 this.paginationStart = 0;
+                 this.paginationEnd = this.getPageSize();
+                 this._addPaginationBar();
+             }
+             else
+             {
+                 this.pagination = false;
+                 this._removePaginationBar();
+             }
+
              this.setObjectList(objList);
+             this.refresh();
          },
          
-         _applyObjectList : function (list) {
+         refresh : function () {
              var removed = this.contentWidget.removeAll();
              for(var i=0; i<removed.length; i++) {
                  removed[i].dispose();
              }
 
+             var list = this.getObjectList();
+             
              if( list != undefined ) {
-                 for (var i=0; i < list.length; i++) {
-                     this._addObject(list[i]);
+                 if( this.pagination )
+                 {
+                     for (var i=this.paginationStart;
+                          i < this.paginationEnd; i++)
+                     {
+                         this._addObject(list[i]);
+                     }
+
+                     this.paginationLabel.setValue(
+                         "Showing objects " + (this.paginationStart+1) +
+                             " to " + (this.paginationEnd) +
+                             " out of " + list.length);
+                 }
+                 else
+                 {
+                     for (var i=0; i < list.length; i++)
+                     {
+                         this._addObject(list[i]);
+                     }
                  }                                      
              }
          },
@@ -91,6 +140,62 @@ qx.Class.define
              box.add(buttonsRow);             
              box.add(disp);
              this.contentWidget.add(box);
+         },
+
+         _addPaginationBar : function() {
+             if( this.paginationBar ) {
+                 return;
+             }
+                 
+             var buttonsRow = spsidgui.Application.buttonRow();
+
+             var label = this.paginationLabel = new qx.ui.basic.Label();
+             buttonsRow.add(label);
+
+             var prevButton = new qx.ui.form.Button("<<");
+             prevButton.setUserData("ObjectList", this);
+             prevButton.addListener(
+                 "execute", function(e) {
+                     var target = e.getTarget().getUserData("ObjectList");
+                     var pagesize = target.getPageSize();
+                     var arraylen = target.getObjectList().length;
+                     target.paginationStart -= pagesize;
+                     if( target.paginationStart < 0 ) {
+                         target.paginationStart = 0;
+                     }
+                     target.paginationEnd = target.paginationStart + pagesize;
+                     target.refresh();
+                 });
+             buttonsRow.add(prevButton);
+             
+             var nextButton = new qx.ui.form.Button(">>");
+             nextButton.setUserData("ObjectList", this);
+             nextButton.addListener(
+                 "execute", function(e) {
+                     var target = e.getTarget().getUserData("ObjectList");
+                     var pagesize = target.getPageSize();
+                     var arraylen = target.getObjectList().length;
+                     if( target.paginationEnd < arraylen ) {
+                         target.paginationStart = target.paginationEnd;
+                     }
+                     target.paginationEnd += pagesize;
+                     if( target.paginationEnd > arraylen ) {
+                         target.paginationEnd = arraylen;
+                     }
+                     target.refresh();
+                 });
+             buttonsRow.add(nextButton);
+
+             this.paginationBar = buttonsRow;             
+             this.addAt(buttonsRow, 0);
+         },
+
+         _removePaginationBar : function() {
+             if( this.paginationBar ) {
+                 this.paginationLabel = null;
+                 this.paginationBar = null;
+                 this.removeAt(0);
+             }
          }
      }
  }
