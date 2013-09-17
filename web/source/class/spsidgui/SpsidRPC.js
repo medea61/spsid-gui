@@ -150,7 +150,16 @@ qx.Class.define('spsidgui.SpsidRPC', {
             this._call(handler, target,
                        'get_schema',
                        {});
-        }        
+        },
+
+        new_object_default_attrs :
+        function(handler, target, container, objclass, templatekeys) {
+            this._call(handler, target,
+                       'new_object_default_attrs',
+                       {'container' : container,
+                        'objclass' : objclass,
+                        'templatekeys' : templatekeys});
+        }
     }
 });
 

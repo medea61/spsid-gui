@@ -23,7 +23,8 @@ qx.Class.define
              'spsid.object.container' : true
          },         
          alwaysProtected : {
-             'spsid.object.class' : true
+             'spsid.object.class' : true,
+             'spsid.object.container' : true
          },
 
          load : function () {
@@ -201,8 +202,9 @@ qx.Class.define
                      true : false );
          },
          
-         getAttrDefaultVal : function(attr_name) {
-             return( this.attrProperty(attr_name, 'default') );
+         isAttrCalculated : function(attr_name) {
+             return( this.attrProperty(attr_name, 'calculated') ?
+                     true : false );
          },
          
          isAttrTemplateKey : function(attr_name) {

@@ -224,10 +224,22 @@ qx.Class.define
              this.newObjClass = objclass;
              this.newObjTempltateKeys = templatekeys;
              this._clearEditZone();
-             this._populateEditZone();
-             this._updateCaption();
-             this.open();
-             this.setStatus("Fill in the attribute values for a new object");
+
+             var rpc = spsidgui.SpsidRPC.getInstance();
+             rpc.new_object_default_attrs(
+                 function(myself, result) {
+                     myself.origAttributes = result;
+                     myself._populateEditZone();
+                     myself._updateCaption();
+                     myself.open();
+                     myself.setStatus(
+                         "Enter the attribute values for a new object");
+                     
+                 },
+                 this,
+                 this.getContainerID(),
+                 objclass,
+                 templatekeys);
          },
                   
          _populateEditZone : function() {
@@ -239,35 +251,27 @@ qx.Class.define
                  var objclass = this.newObjClass;
                  var templatekeys = this.newObjTempltateKeys;
 
-                 origAttributes['spsid.object.class'] = objclass;
-                 for(var attr_name in templatekeys) {
-                     origAttributes[attr_name] = templatekeys[attr_name];
-                 }
+                 origAttributes = this.origAttributes;                 
                  
                  var schema = spsidgui.Schema.getInstance(objclass);
                  var attrnames = schema.getAttributeNames();
                  for(var i=0; i<attrnames.length; i++) {
                      var attr_name = attrnames[i];
 
-                     if( origAttributes[attr_name] == undefined &&
+                     if( origAttributes[attr_name] == undefined
+                         &&
                          (! schema.isAttrTemplateMember(attr_name) ||
                           schema.isAttrActiveTemplateMember(
-                              attr_name, templatekeys) ) &&
-                         ! schema.isAttrInsignificant(attr_name) &&
-                         ! schema.isAttrHidden(attr_name) )
+                              attr_name, templatekeys)
+                         )
+                         &&
+                         ! schema.isAttrInsignificant(attr_name)
+                         &&
+                         ! schema.isAttrHidden(attr_name)
+                         &&
+                         ! schema.isAttrCalculated(attr_name) )
                      {
-                         var val;
-                         if( schema.isAttrObjref(attr_name) ) {
-                             val = 'NIL';
-                         }
-                         else {
-                             val = schema.getAttrDefaultVal(attr_name);
-                             if( val == undefined ) {
-                                 val = "";
-                             }
-                         }
-                         
-                         origAttributes[attr_name] = val;
+                         origAttributes[attr_name] = "";
                      }
                  }
              }
@@ -699,11 +703,16 @@ qx.Class.define
              for(var i=0; i<attrnames.length; i++) {
                  var attr_name = attrnames[i];
                  
-                 if( ! schema.isAttrProtected(attr_name) &&
+                 if( ! schema.isAttrProtected(attr_name)
+                     &&
+                     ! schema.isAttrCalculated(attr_name)
+                     &&
                      (! schema.isAttrTemplateMember(attr_name) ||
                       schema.isAttrActiveTemplateMember(
-                          attr_name, templatekeys) ) &&
-                     this.origAttributes[attr_name] == undefined &&
+                          attr_name, templatekeys) )
+                     &&
+                     this.origAttributes[attr_name] == undefined
+                     &&
                      ! this.addedAttributes[attr_name] )
                  {
                      attrs.push(attr_name);
