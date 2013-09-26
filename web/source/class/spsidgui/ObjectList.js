@@ -109,15 +109,12 @@ qx.Class.define
              var disp = new spsidgui.DisplayObject(objID);
              
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
-             box.set({decorator: "inset"});
+             box.set({appearance: "object-list-item"});
 
              var buttonsRow = spsidgui.Application.buttonRow();
              
              var name_label = new qx.ui.basic.Label();
-             name_label.set({decorator: "inset",
-                             font: "bold",
-                             textAlign: "center",
-                             minWidth: 200,
+             name_label.set({appearance: "object-list-item-label",
                              selectable: true});
              disp.setNameLabel(name_label);            
              
