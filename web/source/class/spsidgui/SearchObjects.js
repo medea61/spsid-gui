@@ -67,7 +67,7 @@ qx.Class.define
                          var klass = schema.getObjclass();
                          klasses.push(klass);
                          sequences[klass] = schema.displaySequence();
-                         descriptions[klass] = schema.displayDescr();
+                         descriptions[klass] = schema.classDescription();
                      }
                      return(true);
                  });

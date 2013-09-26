@@ -33,6 +33,11 @@ qx.Class.define
          objectName : {
              init : "",
              check : "String"
+         },
+
+         objectDescr : {
+             init : "",
+             check : "String"
          }
      },
 
@@ -78,6 +83,7 @@ qx.Class.define
                  this.getObjectID());
          },
 
+         /* this function also updates objectDescr */
          _initObjectName : function() {
 
              if( ! this.isReady() ) {
@@ -86,11 +92,27 @@ qx.Class.define
 
              var schema = this.getSchema();
              
-             if( schema.hasDisplay() &&
-                 schema.displayNameAttribute() != undefined )
+             if( schema.displayNameAttribute() != undefined )
              {
                  this.setObjectName(
                      this.getAttr(schema.displayNameAttribute()));
+
+                 var descr_attrs = schema.displayDescrAttributes();
+                 var descr = '';
+                 for(var i=0; i<descr_attrs.length; i++)
+                 {
+                     var val = this.getAttr(descr_attrs[i]);
+                     if( val != undefined )
+                     {
+                         if( val.length > 0 && descr.length > 0 )
+                         {
+                             descr += ' ';
+                         }
+                         descr += val;
+                     }
+                 }
+
+                 this.setObjectDescr(descr);                    
                  return;
              }
              

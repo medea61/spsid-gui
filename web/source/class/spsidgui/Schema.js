@@ -85,6 +85,14 @@ qx.Class.define
                  s['attr'] = {};
              }
          },
+
+         getSchemaDisplay : function(prop) {
+             return( this.getSchema()['display'][prop] );
+         },
+
+         getSchemaAttr : function(attr) {
+             return( this.getSchema()['attr'][attr] );
+         },
          
          isSingleInstance : function() {
              return(this.getSchema()['single_instance'] ? true:false);
@@ -108,29 +116,57 @@ qx.Class.define
              return(this.getSchema()['display'] != undefined);
          },
 
-         displayDescr : function() {
+         classDescription : function() {
              return(this.hasDisplay() ?
-                    this.getSchema()['display']['class_descr'] :
+                    this.getSchemaDisplay('class_descr') :
                     this.getObjclass());
+         },
+
+         instanceDescription : function() {
+             var descr;
+             if( this.hasDisplay() )
+             {
+                 descr =  this.getSchemaDisplay('instance_descr');
+                 if( descr == undefined || descr.length == 0 )
+                 {
+                     descr = this.getObjclass();
+                 }
+             }
+             else
+             {
+                 descr = this.getObjclass();
+             }
+             return(descr);
          },
 
          displaySequence : function() {
              return(this.hasDisplay() ?
-                    this.getSchema()['display']['sequence'] : null);
+                    this.getSchemaDisplay('sequence') : null);
          },
          
          displayNameAttribute : function() {
              return(this.hasDisplay() ?
-                    this.getSchema()['display']['name_attr'] : null);
+                    this.getSchemaDisplay('name_attr') : null);
+         },
+
+         displayDescrAttributes : function() {
+             if( this.hasDisplay() )
+             {
+                 return(this.getSchemaDisplay('descr_attr'));
+             }
+             else
+             {
+                 return(new qx.type.Array());
+             }
          },
          
          displayReadOnly : function() {
              return(this.hasDisplay() &&
-                    this.getSchema()['display']['read_only']);
+                    this.getSchemaDisplay('read_only'));
          },
 
          attrProperty : function(attr_name, prop) {
-             var p = this.getSchema()['attr'][attr_name];
+             var p = this.getSchemaAttr(attr_name);
              if( p != undefined ) {
                  return( p[prop] );
              }

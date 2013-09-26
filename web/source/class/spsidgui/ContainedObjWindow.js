@@ -144,7 +144,7 @@ qx.Class.define
                              if( ! myself.tViewPages[klass] ) {
                                  myself._addPage(
                                      klass,
-                                     schema.displayDescr());
+                                     schema.classDescription());
                              }
                              else {
                                  myself._refreshPage(klass);
@@ -194,9 +194,17 @@ qx.Class.define
          },
          
          _initCaption: function(obj) {
-             this.setCaption("Contents of " +
-                             obj.getAttr('spsid.object.class') + " " +
-                             obj.getObjectName());
+             var schema = obj.getSchema();
+             var caption = "Contents of " +
+                 schema.instanceDescription() + ": " +
+                 obj.getObjectName();
+             
+             var descr = obj.getObjectDescr();
+             if( descr.length > 0 ) {
+                 caption += (' -- ' + descr);
+             }
+             
+             this.setCaption(caption);
          }
      }
  });

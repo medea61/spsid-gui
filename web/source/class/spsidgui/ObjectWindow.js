@@ -90,8 +90,16 @@ qx.Class.define
          },
          
          _initCaption: function(obj) {
-             this.setCaption(obj.getObjectName() + ' -- ' +
-                             obj.getAttr('spsid.object.class'));
+             var schema = obj.getSchema();
+             var caption = schema.instanceDescription() + ": " +
+                 obj.getObjectName();
+
+             var descr = obj.getObjectDescr();
+             if( descr.length > 0 ) {
+                 caption += (' -- ' + descr);
+             }
+
+             this.setCaption(caption);
          },
 
          openLog : function() {
