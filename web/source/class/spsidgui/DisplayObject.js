@@ -131,7 +131,8 @@ qx.Class.define
                  
                  var attrLabel = new qx.ui.basic.Label(attr_name);
                  attrLabel.set({selectable : true,
-                                paddingLeft: 5});
+                                paddingLeft: 5,
+                                paddingRight: 5});
 
                  var descr = schema.attrDescr(attr_name);
                  if( descr != undefined ) {
