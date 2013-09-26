@@ -35,7 +35,7 @@ qx.Theme.define
                      decorator : "object-list-item-label",
                      font: "bold",
                      textAlign: "center",
-                     minWidth: 200,
+                     minWidth: 200
                  };
              }
          }
