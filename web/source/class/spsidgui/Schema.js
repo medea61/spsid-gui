@@ -164,7 +164,12 @@ qx.Class.define
              return(this.hasDisplay() &&
                     this.getSchemaDisplay('read_only'));
          },
-
+         
+         isTreeBrowserAllowed : function() {
+             return(this.hasDisplay() &&
+                    this.getSchemaDisplay('tree_browser'));
+         },
+         
          attrProperty : function(attr_name, prop) {
              var p = this.getSchemaAttr(attr_name);
              if( p != undefined ) {

@@ -16,15 +16,10 @@ qx.Theme.define
          
          "object-list-item" :
          {
-             decorator : qx.ui.decoration.Uniform,
+             include : "spsid-inset",
              
              style :
              {
-                 width : 1,
-                 color : [ "border-light-shadow",
-                           "border-light",
-                           "border-light",
-                           "border-light" ],
                  backgroundColor : "#f0f0f0"
              }
          },
@@ -32,7 +27,19 @@ qx.Theme.define
          "object-list-item-label" :
          {
              decorator : qx.ui.decoration.Uniform             
-         }
+         },
          
+         "spsid-inset" :
+         {
+             decorator : qx.ui.decoration.Uniform,
+             style :
+             {
+                 width : 1,
+                 color : [ "border-light-shadow",
+                           "border-light",
+                           "border-light",
+                           "border-light" ]
+             }             
+         }         
      }
  });

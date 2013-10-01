@@ -88,20 +88,7 @@ qx.Class.define
                      var notify = e.getTarget().getUserData("notifyRefresh");
                      spsidgui.EditObject.openNewObjInstance(oid, notify);
                  });
-             // check if objects can be actually created within this class
-             var containerClass = obj.getAttr('spsid.object.class');
-             var found = false;
-             spsidgui.Schema.enumerate(
-                 function(schema) {
-                     if( schema.isContainedIn(containerClass) &&
-                         schema.displaySequence() != undefined &&
-                         ! schema.displayReadOnly() )
-                     {
-                         found = true;
-                     }
-                     return(!found);
-                 });             
-             addButton.setEnabled(found);             
+             addButton.setEnabled(obj.canAddChildren());
              addButton.setToolTip(new qx.ui.tooltip.ToolTip(
                  "Add a new contained object"));
 

@@ -176,6 +176,41 @@ qx.Class.define
              }
              attrnames.sort();
              return(attrnames);
-         }
+         },
+
+         isEditable : function() {
+             var schema = this.getSchema();
+             if( schema.displayReadOnly() ) {
+                 return false;
+             }
+             
+             if( this.getAttr('spsid_gui.edit.locked') ) {
+                 return false;
+             }
+             
+             return true;
+         },
+
+         // check if objects can be actually created within this class
+         canAddChildren : function () {
+
+             if( ! this.getSchema().mayHaveChildren() ) {
+                 return(false);
+             }
+             
+             var containerClass = this.getAttr('spsid.object.class');
+             var found = false;
+             spsidgui.Schema.enumerate(
+                 function(schema) {
+                     if( schema.isContainedIn(containerClass) &&
+                         schema.displaySequence() != undefined &&
+                         ! schema.displayReadOnly() )
+                     {
+                         found = true;
+                     }
+                     return(!found);
+                 });
+             return(found);
+         }         
      }
  });

@@ -52,6 +52,7 @@ qx.Class.define
      {
          containerButton : null,
          contentButton : null,
+         treeButton : null,
          editButton : null,
          
          addControlButtons : function(container) {
@@ -97,7 +98,20 @@ qx.Class.define
                  });
              container.add(contentButton);
              this.contentButton = contentButton;
-                      
+
+             var treeButton = new qx.ui.form.Button("Tree");
+             treeButton.setUserData("objID", objID);
+             treeButton.setEnabled(false);
+             treeButton.addListener(
+                 "execute",
+                 function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     spsidgui.TreeBrowserWindow.openInstance(oid);
+                 });
+             container.add(treeButton);
+             this.treeButton = treeButton;
+
+             
              var editButton = new qx.ui.form.Button("Edit");
              editButton.setUserData("objID", objID);
              editButton.setEnabled(false);
@@ -191,29 +205,29 @@ qx.Class.define
              var buttons = {
                  containerButton : true,
                  contentButton : true,
+                 treeButton : true,
                  editButton : true
              };             
 
              var schema = spsidgui.Schema.getInstance(
                  obj.getAttr('spsid.object.class'));
 
-             if( schema.isRootObject() && this.containerButton ) {
+             if( schema.isRootObject() ) {
                  buttons.containerButton = false;
              }
                  
-             if( ! schema.mayHaveChildren() && this.contentButton ) {
+             if( ! schema.mayHaveChildren() ) {
                  buttons.contentButton = false;
              }
                  
-             if( schema.displayReadOnly() && this.editButton ) {
-                 buttons.editButton = false;
+             if( ! schema.isTreeBrowserAllowed() ) {
+                 buttons.treeButton = false;
              }
 
-             var v = obj.getAttr('spsid_gui.edit.locked');
-             if( v != undefined && v != 0 ) {
+             if( ! obj.isEditable() ) {
                  buttons.editButton = false;
              }
-
+             
              for(var b in buttons) {
                  if( this[b] != undefined ) {
                      this[b].setEnabled(buttons[b]);
