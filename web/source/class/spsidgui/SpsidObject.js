@@ -211,6 +211,6 @@ qx.Class.define
                      return(!found);
                  });
              return(found);
-         }         
+         }
      }
  });

@@ -164,10 +164,38 @@ qx.Class.define
              return(this.hasDisplay() &&
                     this.getSchemaDisplay('read_only'));
          },
-         
+
          isTreeBrowserAllowed : function() {
-             return(this.hasDisplay() &&
-                    this.getSchemaDisplay('tree_browser'));
+             return((this.hasDisplay() &&
+                     this.getSchemaDisplay('tree_browser')) ? true : false);
+         },
+         
+         // recurrently climb up the tree to find a class which allows
+         // tree browser
+         canUseTreeBrowser : function() {
+             if( this.isTreeBrowserAllowed() ) {
+                 return(true);
+             }
+
+             var s = this.getSchema();
+             if( s['contained_in'] == undefined ) {
+                 return(false);
+             }
+
+             var found = false;
+             for( var containerClass in s['contained_in'] ) {
+                 if( s['contained_in'][containerClass] ) {
+                     var containerSchema =
+                         spsidgui.Schema.getInstance(containerClass);
+                     
+                     if( containerSchema.canUseTreeBrowser() ) {
+                         found = true;
+                         break;
+                     }
+                 }
+             }
+             
+             return(found);
          },
          
          attrProperty : function(attr_name, prop) {

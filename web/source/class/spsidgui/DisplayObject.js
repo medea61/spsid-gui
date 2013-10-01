@@ -3,7 +3,7 @@ qx.Class.define
  {
      extend : qx.ui.container.Composite,
 
-     construct : function(objID) {
+     construct : function(objID, buttonsRow) {
 
          this.initObjectID(objID);
 
@@ -14,7 +14,8 @@ qx.Class.define
          
          this.base(arguments, layout);
 
-         var myself = this;
+         this.buttonsRow = buttonsRow;
+         
          var obj = spsidgui.SpsidObject.getInstance(objID);
 
          obj.addListener("loaded", this._onObjectLoaded, this);
@@ -50,81 +51,9 @@ qx.Class.define
 
      members :
      {
-         containerButton : null,
-         contentButton : null,
-         treeButton : null,
-         editButton : null,
-         
-         addControlButtons : function(container) {
-             
-             var objID = this.getObjectID();
-             
-             var refreshButton = new qx.ui.form.Button("Refresh");
-             refreshButton.setUserData("objID", objID);
-             refreshButton.addListener(
-                 "execute", function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     var obj = spsidgui.SpsidObject.getInstance(oid);
-                     obj.refresh();
-                 });
-             container.add(refreshButton);
-         
-             var containerButton = new qx.ui.form.Button("Container");
-             containerButton.setUserData("objID", objID);
-             containerButton.setEnabled(false);
-             containerButton.addListener(
-                 "execute",
-                 function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     var obj = spsidgui.SpsidObject.getInstance(oid);
-                     if( obj.getReady() ) {
-                         var cntr = obj.getAttr('spsid.object.container');
-                         if( cntr != undefined && cntr != 'NIL' ) {
-                             spsidgui.ObjectWindow.openInstance(cntr);
-                         }
-                     }
-                 });
-             container.add(containerButton);
-             this.containerButton = containerButton;
-
-             var contentButton = new qx.ui.form.Button("Contents");
-             contentButton.setUserData("objID", objID);
-             contentButton.setEnabled(false);
-             contentButton.addListener(
-                 "execute",
-                 function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     spsidgui.ContainedObjWindow.openInstance(oid);
-                 });
-             container.add(contentButton);
-             this.contentButton = contentButton;
-
-             var treeButton = new qx.ui.form.Button("Tree");
-             treeButton.setUserData("objID", objID);
-             treeButton.setEnabled(false);
-             treeButton.addListener(
-                 "execute",
-                 function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     spsidgui.TreeBrowserWindow.openInstance(oid);
-                 });
-             container.add(treeButton);
-             this.treeButton = treeButton;
-
-             
-             var editButton = new qx.ui.form.Button("Edit");
-             editButton.setUserData("objID", objID);
-             editButton.setEnabled(false);
-             editButton.addListener(
-                 "execute",
-                 function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     spsidgui.EditObject.openEditInstance(oid);
-                 });
-             container.add(editButton);
-             this.editButton = editButton;
-         },
-         
+         buttonsRow : null,
+         buttonsRowPopulated : false,
+                           
          buildContent : function() {
 
              this.clear();
@@ -185,56 +114,77 @@ qx.Class.define
                  nRow++;
              }
 
-             this.updateButtons();
-
              if( this.getNameLabel() ) {
                  this.getNameLabel().setValue(obj.getObjectName());
              }
-         },
 
-         updateButtons : function() {
-             // disable some buttons according to schema attributes
-
-             var objID = this.getObjectID();
-             var obj = spsidgui.SpsidObject.getInstance(objID);
-             
-             if( ! obj.getReady() ) {
+             var buttonsRow = this.buttonsRow;
+             if( ! buttonsRow || this.buttonsRowPopulated ) {
                  return;
              }
-
-             var buttons = {
-                 containerButton : true,
-                 contentButton : true,
-                 treeButton : true,
-                 editButton : true
-             };             
-
-             var schema = spsidgui.Schema.getInstance(
-                 obj.getAttr('spsid.object.class'));
-
-             if( schema.isRootObject() ) {
-                 buttons.containerButton = false;
-             }
-                 
-             if( ! schema.mayHaveChildren() ) {
-                 buttons.contentButton = false;
-             }
-                 
-             if( ! schema.isTreeBrowserAllowed() ) {
-                 buttons.treeButton = false;
-             }
-
-             if( ! obj.isEditable() ) {
-                 buttons.editButton = false;
-             }
              
-             for(var b in buttons) {
-                 if( this[b] != undefined ) {
-                     this[b].setEnabled(buttons[b]);
+             if( schema.canUseTreeBrowser() )
+             {
+                 var treeButton = new qx.ui.form.Button("Tree");
+                 treeButton.setUserData("objID", objID);
+                 treeButton.addListener(
+                     "execute",
+                     function(e) {
+                         var oid = e.getTarget().getUserData("objID");
+                         var obj = spsidgui.SpsidObject.getInstance(oid);
+                         spsidgui.TreeBrowserWindow.openInstance(obj);
+                     });
+                 buttonsRow.add(treeButton);
+             }
+             else
+             {
+                 if( ! schema.isRootObject() ) {
+                     var containerButton = new qx.ui.form.Button("Container");
+                     containerButton.setUserData("objID", objID);
+                     containerButton.addListener(
+                         "execute",
+                         function(e) {
+                             var oid = e.getTarget().getUserData("objID");
+                             var obj = spsidgui.SpsidObject.getInstance(oid);
+                             if( obj.getReady() ) {
+                                 var cntr =
+                                     obj.getAttr('spsid.object.container');
+                                 if( cntr != undefined && cntr != 'NIL' ) {
+                                     spsidgui.ObjectWindow.openInstance(cntr);
+                                 }
+                             }
+                         });
+                     buttonsRow.add(containerButton);
+                 }
+
+                 if( schema.mayHaveChildren() ) {
+                     var contentButton = new qx.ui.form.Button("Contents");
+                     contentButton.setUserData("objID", objID);
+                     contentButton.addListener(
+                         "execute",
+                         function(e) {
+                             var oid = e.getTarget().getUserData("objID");
+                             spsidgui.ContainedObjWindow.openInstance(oid);
+                         });
+                     buttonsRow.add(contentButton);
                  }
              }
-         },
 
+             if( obj.isEditable() ) {
+                 var editButton = new qx.ui.form.Button("Edit");
+                 editButton.setUserData("objID", objID);
+                 editButton.addListener(
+                     "execute",
+                     function(e) {
+                         var oid = e.getTarget().getUserData("objID");
+                         spsidgui.EditObject.openEditInstance(oid);
+                     });
+                 buttonsRow.add(editButton);
+             }
+
+             this.buttonsRowPopulated = true;
+         },
+         
          clear : function() {
              var removed = this.removeAll();
              for(var i=0; i<removed.length; i++) {

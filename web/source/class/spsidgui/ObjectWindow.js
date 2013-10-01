@@ -62,8 +62,7 @@ qx.Class.define
              var objID = this.getObjectID();
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
              var buttonsRow = spsidgui.Application.buttonRow();
-             var disp = new spsidgui.DisplayObject(objID);
-             disp.addControlButtons(buttonsRow);
+             var disp = new spsidgui.DisplayObject(objID, buttonsRow);
 
              var logButton = new qx.ui.form.Button("Log");
              logButton.addListener(
@@ -72,7 +71,17 @@ qx.Class.define
                  },
                  this);
              buttonsRow.add(logButton);
-             
+
+             var refreshButton = new qx.ui.form.Button("Refresh");
+             refreshButton.setUserData("objID", objID);
+             refreshButton.addListener(
+                 "execute", function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     var obj = spsidgui.SpsidObject.getInstance(oid);
+                     obj.refresh();
+                 });
+             buttonsRow.add(refreshButton);
+
              disp.buildContent();
 
              var obj = spsidgui.SpsidObject.getInstance(objID);

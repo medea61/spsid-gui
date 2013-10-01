@@ -43,8 +43,32 @@ qx.Class.define
      statics :
      {
          _instances : {},
+
+         // recursively get to the nearest parent which can open a tree browser
+         openInstance : function(obj) {
+             var schema = obj.getSchema();
+             if( schema.isTreeBrowserAllowed() ) {
+                 spsidgui.TreeBrowserWindow._openInstance(obj.getObjectID());
+                 return;
+             }
+             
+             var cntr = obj.getAttr('spsid.object.container');
+             if( cntr != undefined && cntr != 'NIL' ) {
+                 var rpc = spsidgui.SpsidRPC.getInstance();
+
+                 rpc.get_object(
+                     function(x, attr) {
+                         var o = spsidgui.SpsidObject.getInstance(
+                             attr['spsid.object.id'], attr);
+                         spsidgui.TreeBrowserWindow.openInstance(o);
+                     },
+                     null,
+                     cntr);
+             }
+         },
          
-         openInstance : function(objID) {
+         
+         _openInstance : function(objID) {
              if( ! spsidgui.TreeBrowserWindow._instances[objID] ) {
                  var w = new spsidgui.TreeBrowserWindow(objID);
                  spsidgui.TreeBrowserWindow._instances[objID] = w;
@@ -63,6 +87,7 @@ qx.Class.define
          objDisp : null,
          selectedObjID : null,
 
+         popupButton : null,
          editButton : null,
          addButton : null,
 
@@ -100,6 +125,17 @@ qx.Class.define
              rightside.setDecorator("spsid-inset");
              
              var buttonsRow = spsidgui.Application.buttonRow();
+             
+             var popupButton = this.popupButton =
+                 new qx.ui.form.Button("Popup");
+             popupButton.setEnabled(false);
+             popupButton.setUserData("tree", this);
+             popupButton.addListener(
+                 "execute", function(e) {
+                     var oid = e.getTarget().getUserData("tree").selectedObjID;
+                     spsidgui.ObjectWindow.openInstance(oid);
+                 });
+             buttonsRow.add(popupButton);
 
              
              var editButton = this.editButton = new qx.ui.form.Button("Edit");
@@ -130,7 +166,17 @@ qx.Class.define
              addButton.setToolTip(new qx.ui.tooltip.ToolTip(
                  "Add a new contained object"));
              buttonsRow.add(addButton);
+
              
+             var refreshButton = new qx.ui.form.Button("Refresh");
+             refreshButton.setUserData("objID", objID);
+             refreshButton.addListener(
+                 "execute", function(e) {
+                     var oid = e.getTarget().getUserData("objID");
+                     var obj = spsidgui.SpsidObject.getInstance(oid);
+                     obj.refresh();
+                 });
+             buttonsRow.add(refreshButton);
              
              rightside.add(buttonsRow);
 
@@ -150,16 +196,22 @@ qx.Class.define
                  "changeSelection",
                  function(e)
                  {
+                     var removed = this.objDispContainer.removeAll();
+                     for(var i=0; i<removed.length; i++) {
+                         removed[i].dispose();
+                     }
+
                      var node = e.getData()[0];
+                     if( ! node ) {
+                         this.selectedObjID = null;
+                         return;
+                     }
+                     
                      var objID = node.data.application;
                      this.selectedObjID = objID;
                      
                      var disp = new spsidgui.DisplayObject(objID);
                      this.objDisp = disp;
-                     var removed = this.objDispContainer.removeAll();
-                     for(var i=0; i<removed.length; i++) {
-                         removed[i].dispose();
-                     }
                      
                      this.objDispContainer.add(disp);
                      disp.buildContent();
@@ -243,7 +295,8 @@ qx.Class.define
              this._addChildrenToTree(dataModel, null, obj);
                                      
              dataModel.setData();
-             this.selectedObjID = null;             
+             
+             this.tree.resetSelection();
              this.updateButtons();
          },
                   
@@ -270,16 +323,19 @@ qx.Class.define
          updateButtons : function() {
              
              var buttons = {
+                 popupButton : false,
                  editButton : false,
                  addButton : false
              };
 
              var objID = this.selectedObjID;
-             if( objID != undefined ) {
+             if( objID ) {
                  
                  var obj = spsidgui.SpsidObject.getInstance(objID);
 
-                 if( obj.getReady() ) {                 
+                 if( obj.getReady() ) {
+                     buttons.popupButton = true;
+                     
                      if( obj.canAddChildren() ) {
                          buttons.addButton = true;
                      }

@@ -106,7 +106,6 @@ qx.Class.define
          _addObject : function (obj) {
 
              var objID = obj.getObjectID();
-             var disp = new spsidgui.DisplayObject(objID);
              
              var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
              box.set({appearance: "object-list-item"});
@@ -115,12 +114,10 @@ qx.Class.define
              
              var name_label = new qx.ui.basic.Label();
              name_label.set({appearance: "object-list-item-label",
-                             selectable: true});
-             disp.setNameLabel(name_label);            
-             
+                             selectable: true});             
              buttonsRow.add(name_label);
              buttonsRow.add(new qx.ui.core.Spacer(30));
-             
+
              var popupButton = new qx.ui.form.Button("Popup");
              popupButton.setUserData("objID", objID);
              popupButton.addListener(
@@ -129,8 +126,10 @@ qx.Class.define
                      spsidgui.ObjectWindow.openInstance(oid);
                  });
              buttonsRow.add(popupButton);
-             
-             disp.addControlButtons(buttonsRow);
+
+             var disp = new spsidgui.DisplayObject(objID, buttonsRow);
+             disp.setNameLabel(name_label);            
+
              disp.setDestroyOnObjectDelete(box);
              disp.buildContent();
              
