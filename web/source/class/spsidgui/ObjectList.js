@@ -50,10 +50,6 @@ qx.Class.define
                          attr['spsid.object.id'], attr));
              }
 
-             objList.sort(function(a,b) {
-                 return(a.getObjectName().localeCompare(b.getObjectName()));
-             });
-
              if( list.length > this.getPageSize() )
              {
                  this.pagination = true;
