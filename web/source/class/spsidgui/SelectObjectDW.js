@@ -178,7 +178,7 @@ qx.Class.define
                                      attr['spsid.object.id'], attr);
                              resList.push(
                                  qx.data.marshal.Json.createModel({
-                                     objName: obj.getObjectName(),
+                                     objName: obj.getObjectFullName(),
                                      objID: obj.getObjectID()
                                  }));
                          }

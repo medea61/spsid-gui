@@ -101,7 +101,7 @@ qx.Class.define
          _initCaption: function(obj) {
              var schema = obj.getSchema();
              var caption = schema.instanceDescription() + ": " +
-                 obj.getObjectName();
+                 obj.getObjectFullName();
 
              var descr = obj.getObjectDescr();
              if( descr.length > 0 ) {

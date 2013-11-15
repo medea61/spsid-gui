@@ -149,6 +149,16 @@ qx.Class.define
                     this.getSchemaDisplay('name_attr') : null);
          },
 
+         displayFullNameAttribute : function() {
+             if( !this.hasDisplay() ) {
+                 return( null );
+             }
+             if( this.getSchemaDisplay('fullname_attr') != undefined ) {
+                 return( this.getSchemaDisplay('fullname_attr') );
+             }
+             return( this.getSchemaDisplay('name_attr') );             
+         },
+             
          displayDescrAttributes : function() {
              if( this.hasDisplay() )
              {

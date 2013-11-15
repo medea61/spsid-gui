@@ -578,7 +578,7 @@ qx.Class.define
                      this.origAttributes['spsid.object.class'] +
                      ' inside ' +
                      cntr.getAttr('spsid.object.class') + ' ' +
-                     cntr.getObjectName();
+                     cntr.getObjectFullName();
              }
              else {
                  var objID = this.getObjectID();
@@ -586,7 +586,7 @@ qx.Class.define
                  if( this.modified ) {
                      str += "[modified] ";
                  }
-                 str += 'Edit ' + obj.getObjectName() + ' -- ' +
+                 str += 'Edit ' + obj.getObjectFullName() + ' -- ' +
                      obj.getAttr('spsid.object.class');
              }
                  
@@ -899,7 +899,7 @@ qx.Class.define
              var objID = this.getObjectID();
              var obj = spsidgui.SpsidObject.getInstance(objID);
              msgLabel.setValue(
-                 "The object <b>" + obj.getObjectName() +
+                 "The object <b>" + obj.getObjectFullName() +
                      "</b> will be deleted. Please confirm.");
              dw.positionAndOpen(this, 400, 50);
          },

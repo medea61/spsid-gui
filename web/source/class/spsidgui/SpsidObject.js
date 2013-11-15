@@ -35,6 +35,11 @@ qx.Class.define
              check : "String"
          },
 
+         objectFullName : {
+             init : "",
+             check : "String"
+         },
+
          objectDescr : {
              init : "",
              check : "String"
@@ -90,13 +95,22 @@ qx.Class.define
                  return;
              }
 
+             if( this.getAttr('spsid.object.container') == 'NIL' ) {
+                 this.setObjectName("Root Object");
+                 this.setObjectFullName("Root Object");
+                 return;
+             }
+
              var schema = this.getSchema();
              
              if( schema.displayNameAttribute() != undefined )
              {
                  this.setObjectName(
                      this.getAttr(schema.displayNameAttribute()));
-
+             
+                 this.setObjectFullName(
+                     this.getAttr(schema.displayFullNameAttribute()));
+                 
                  var descr_attrs = schema.displayDescrAttributes();
                  var descr = '';
                  for(var i=0; i<descr_attrs.length; i++)
@@ -111,17 +125,13 @@ qx.Class.define
                          descr += val;
                      }
                  }
-
+             
                  this.setObjectDescr(descr);                    
                  return;
              }
-             
-             if( this.getAttr('spsid.object.container') == 'NIL' ) {
-                 this.setObjectName("Root Object");
-                 return;
-             }
-             
+                          
              this.setObjectName(this.getObjectID());
+             this.setObjectFullName(this.getObjectID());
          },
 
          newAttrCache : function(attr) {

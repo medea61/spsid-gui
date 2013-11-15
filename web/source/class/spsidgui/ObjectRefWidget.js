@@ -56,7 +56,7 @@ qx.Class.define
              if( objID != undefined && objID != 'NIL') {
                  var obj = spsidgui.SpsidObject.getInstance(objID);
                  if( obj.getReady() ) {
-                     this.setValue(obj.getObjectName());
+                     this.setValue(obj.getObjectFullName());
                      valUpdated = true;
                  }
              }

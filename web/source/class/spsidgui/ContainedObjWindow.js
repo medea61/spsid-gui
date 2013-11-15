@@ -184,7 +184,7 @@ qx.Class.define
              var schema = obj.getSchema();
              var caption = "Contents of " +
                  schema.instanceDescription() + ": " +
-                 obj.getObjectName();
+                 obj.getObjectFullName();
              
              var descr = obj.getObjectDescr();
              if( descr.length > 0 ) {

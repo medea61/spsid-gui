@@ -118,7 +118,7 @@ qx.Class.define
              
              tree.set({width  : 600,
                        minWidth : 200});
-             splitpane.add(tree, 1);
+             splitpane.add(tree, 0);
 
              var rightside = new qx.ui.container.Composite(
                      new qx.ui.layout.VBox(4));
