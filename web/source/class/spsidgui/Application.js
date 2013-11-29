@@ -18,6 +18,8 @@ qx.Class.define
 
              // retrieve SPSID object schema
              spsidgui.Schema.load();
+
+             spsidgui.Application.currObjSelection = {};
          },
 
          // Top-level toolbar         
@@ -113,6 +115,8 @@ qx.Class.define
      },
 
      statics : {
+         currObjSelection : null,
+         
          buttonRow : function() {
              var row =
                  new qx.ui.container.Composite(new qx.ui.layout.HBox(4));

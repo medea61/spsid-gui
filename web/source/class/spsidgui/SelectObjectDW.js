@@ -28,8 +28,23 @@ qx.Class.define
              w.setUpdateWidget(widget);
              w.setObjclass(objclass);
              w.classLabel.setValue(objclass);
-             w.resultsList.setModel(null);
              w.searchField.setValue("");
+
+             var model = new qx.data.Array();
+             for (containerID in spsidgui.Application.currObjSelection) {
+                 var map = spsidgui.Application.currObjSelection[containerID];
+                 if( map.objclass == objclass ) {
+                     var obj = spsidgui.SpsidObject.getInstance(map.objID);
+                     if( obj.getReady() ) {
+                         model.push(
+                             qx.data.marshal.Json.createModel({
+                                 objName: obj.getObjectFullName(),
+                                 objID: map.objID
+                             }));
+                     }
+                 }
+             }
+             w.resultsList.setModel(model);
              
              w.setCaption('Select an object');
              w.setStatus(

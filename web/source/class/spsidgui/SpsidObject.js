@@ -169,10 +169,13 @@ qx.Class.define
                  this,
                  this.getObjectID());
          },
+
+         getObjClass : function() {
+             return(this.getAttr('spsid.object.class'));
+         },
          
          getSchema : function() {
-             var klass = this.getAttr('spsid.object.class');
-             return(spsidgui.Schema.getInstance(klass));
+             return(spsidgui.Schema.getInstance(this.getObjClass()));
          },
 
          getAttrListForDisplay  : function() {
@@ -208,7 +211,7 @@ qx.Class.define
                  return(false);
              }
              
-             var containerClass = this.getAttr('spsid.object.class');
+             var containerClass = this.getObjClass();
              var found = false;
              spsidgui.Schema.enumerate(
                  function(schema) {

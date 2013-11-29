@@ -31,6 +31,7 @@ qx.Class.define
          if( obj != undefined ) {
              obj.removeListener("loaded", this._onObjectLoaded, this);
          }
+         delete spsidgui.Application.currObjSelection[this.getObjectID()];
      },
 
      properties : {
@@ -207,7 +208,7 @@ qx.Class.define
                          return;
                      }
                      
-                     var objID = node.data.application;
+                     var objID = node.data.application.objID;
                      this.selectedObjID = objID;
                      
                      var disp = new spsidgui.DisplayObject(objID);
@@ -217,6 +218,10 @@ qx.Class.define
                      disp.buildContent();
                      
                      this.updateButtons();
+
+                     // update the global selection information
+                     spsidgui.Application.currObjSelection[
+                         this.getObjectID()] = node.data.application;
                  },
                  this);
              
@@ -230,6 +235,8 @@ qx.Class.define
 
              var label = obj.getObjectName();
              var descr = obj.getObjectDescr();
+             var klass = obj.getObjClass();
+             var objID = obj.getObjectID();
              var newTE;
              
              if( schema.mayHaveChildren() )
@@ -243,7 +250,7 @@ qx.Class.define
              dataModel.setColumnData(newTE, 1, descr);
 
              var node = dataModel.getData()[newTE];             
-             node.data = {application: obj.getObjectID()};
+             node.data = {"application": {"objID" : objID, "objclass": klass}};
              
              return(newTE);
          },
