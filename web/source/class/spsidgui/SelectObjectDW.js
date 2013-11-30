@@ -31,7 +31,7 @@ qx.Class.define
              w.searchField.setValue("");
 
              var model = new qx.data.Array();
-             for (containerID in spsidgui.Application.currObjSelection) {
+             for (var containerID in spsidgui.Application.currObjSelection) {
                  var map = spsidgui.Application.currObjSelection[containerID];
                  if( map.objclass == objclass ) {
                      var obj = spsidgui.SpsidObject.getInstance(map.objID);
