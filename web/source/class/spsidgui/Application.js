@@ -39,7 +39,7 @@ qx.Class.define
              part1.add(searchButton);
 
              var rootButton =
-                 new qx.ui.toolbar.Button("Root");
+                 new qx.ui.toolbar.Button("Browse");
              rootButton.addListener("execute", function() {
                  var klass = spsidgui.Schema.getRootObjectClass();
                  if( klass == null ){
@@ -50,8 +50,10 @@ qx.Class.define
                  rpc.search_objects(
                      function(target, result) {
                          if( result.length > 0 ) {
-                             var oid = result[0]['spsid.object.id'];
-                             spsidgui.ObjectWindow.openInstance(oid);
+                             var objID = result[0]['spsid.object.id'];
+                             spsidgui.SpsidObject.getInstance(objID, result[0]);
+
+                             spsidgui.ContainedObjWindow.openInstance(objID);
                          }
                      },
                      {},
