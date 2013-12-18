@@ -326,7 +326,9 @@ qx.Class.define
              var nRow = editZone.getLayout().getRowCount();
              
              var attrLabel = new qx.ui.basic.Label(attr_name);
-             attrLabel.setPaddingRight(10);
+             attrLabel.set({selectable : true,
+                            paddingRight: 10});
+             
              if( schema.isAttrHilite(attr_name) ) {
                  attrLabel.set({font: "bold"});
              }
@@ -359,6 +361,7 @@ qx.Class.define
                      val = 'NIL';
                  }
                  valWidget = new spsidgui.ObjectRefWidget();
+                 valWidget.set({selectable : true});
                  valWidget.setObjectID(val);
                  is_objref = true;
                  
@@ -374,6 +377,7 @@ qx.Class.define
              else if( schema.isAttrProtected(attr_name) ||
                       schema.isAttrTemplateKey(attr_name) ) {
                  valWidget = new qx.ui.basic.Label(val);
+                 valWidget.set({selectable : true});
              }
              else if( schema.isAttrBoolean(attr_name) ) {
                  val = (val == 0 ? "0":"1");

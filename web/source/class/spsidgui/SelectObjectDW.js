@@ -31,6 +31,20 @@ qx.Class.define
              w.searchField.setValue("");
 
              var model = new qx.data.Array();
+             // fill in the list from the current value
+             {
+                 var objID = widget.getObjectID();
+                 if( objID != undefined && objID != 'NIL' ) {
+                     var obj = spsidgui.SpsidObject.getInstance(objID);
+                     model.push(
+                         qx.data.marshal.Json.createModel({
+                             objName: obj.getObjectFullName(),
+                             objID: objID
+                         }));
+                 }
+             }
+             
+             // fill in the list from current selections
              for (var containerID in spsidgui.Application.currObjSelection) {
                  var map = spsidgui.Application.currObjSelection[containerID];
                  if( map.objclass == objclass ) {
@@ -50,7 +64,7 @@ qx.Class.define
              w.setStatus(
                  "Type in 3 or more first letters of an attribute value");
 
-             w.positionAndOpen(parent, 400, 350);
+             w.positionAndOpen(parent, 600, 350);
              w.searchField.focus();
              return(w);
          }
@@ -101,7 +115,7 @@ qx.Class.define
 
              var searchField = this.searchField =
                  new qx.ui.form.TextField();
-             searchField.setLiveUpdate(true);
+             // searchField.setLiveUpdate(true);
              searchField.setAppearance("widget");
              searchField.setPlaceholder("type here...");
              searchComposlite.add(searchField, {flex: 1});
@@ -115,8 +129,14 @@ qx.Class.define
              resultsList.getSelection().addListener(
                  "change", 
                  function(e) {
-                     this.okButton.setEnabled(
-                         this.resultsList.getSelection().getLength() > 0);
+                     var sel = this.resultsList.getSelection();
+                     if( sel.getLength() > 0 ) {
+                         this.searchField.setValue(sel.getItem(0).getObjName());
+                         this.okButton.setEnabled(true);
+                     }
+                     else {
+                         this.okButton.setEnabled(false);
+                     }
                  },
                  this);
              this.add(resultsList, {flex: 1});
@@ -125,7 +145,7 @@ qx.Class.define
              this.searchTimerId = null;
 
              searchField.addListener(
-                 "changeValue",
+                 "input",
                  function(e)
                  {
                      if( this.searchTimerId != null )
