@@ -61,7 +61,7 @@ qx.Class.define
              var descriptions = {};
              spsidgui.Schema.enumerate(
                  function(schema) {
-                     if( schema.hasDisplay() && 
+                     if( schema.isFullTextSearchPossible() && 
                          schema.displaySequence() != undefined )
                      {
                          var klass = schema.getObjclass();
@@ -86,7 +86,7 @@ qx.Class.define
                          className : klass}));
              }
              
-             topRow.add(new qx.ui.basic.Label("by prefix"),
+             topRow.add(new qx.ui.basic.Label("by substring"),
                          {row: 0, column: 2});
              
              // search
@@ -100,7 +100,6 @@ qx.Class.define
 
              var searchField = this.searchTextField =
                  new qx.ui.form.TextField();
-             searchField.setLiveUpdate(true);
              searchField.setAppearance("widget");
              searchField.setPlaceholder("type here...");
              searchComposlite.add(searchField, {flex: 1});
@@ -121,7 +120,7 @@ qx.Class.define
                  "Type in 3 or more first letters of an attribute value");
              
              searchField.addListener(
-                 "changeValue",
+                 "input",
                  function(e)
                  {
                      if( searchTimerId != null )
@@ -137,7 +136,7 @@ qx.Class.define
                              {
                                  statusBar.setStatus("Searching...");
                                  var sel = classList.getSelection().getItem(0);
-                                 rpc.search_prefix(
+                                 rpc.search_fulltext(
                                      function(target, result)
                                      {
                                          statusBar.setStatus
@@ -147,7 +146,6 @@ qx.Class.define
                                      },
                                      {},
                                      sel.getClassName(),
-                                     null,
                                      userData);
                              }
                          },

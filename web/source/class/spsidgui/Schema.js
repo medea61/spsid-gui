@@ -208,6 +208,16 @@ qx.Class.define
              return(found);
          },
          
+         isFullTextSearchPossible : function() {
+             if( this.hasDisplay() ) {
+                 var attrlist = this.getSchemaDisplay('fullsearch_attr');
+                 if( attrlist != undefined && attrlist.length > 0 ) {
+                     return(true);
+                 }
+             }
+             return(false);
+         },
+
          attrProperty : function(attr_name, prop) {
              var p = this.getSchemaAttr(attr_name);
              if( p != undefined ) {

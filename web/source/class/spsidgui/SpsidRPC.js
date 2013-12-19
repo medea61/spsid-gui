@@ -140,6 +140,14 @@ qx.Class.define('spsidgui.SpsidRPC', {
                         'attr_prefix' : attr_prefix});
         },
 
+        search_fulltext : function(handler, target,
+                                   objclass, search_string) {
+            this._call(handler, target,
+                       'search_fulltext',
+                       {'objclass' : objclass,
+                        'search_string' : search_string});
+        },
+
         contained_classes : function(handler, target, container) {
             this._call(handler, target,
                        'contained_classes',

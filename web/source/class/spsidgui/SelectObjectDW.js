@@ -102,7 +102,7 @@ qx.Class.define
 
              var classLabel = this.classLabel = new qx.ui.basic.Label();
              topRow.add(classLabel);
-             topRow.add(new qx.ui.basic.Label("by prefix"));
+             topRow.add(new qx.ui.basic.Label("by substring"));
 
              // search
              var searchComposlite = new qx.ui.container.Composite();
@@ -115,7 +115,6 @@ qx.Class.define
 
              var searchField = this.searchField =
                  new qx.ui.form.TextField();
-             // searchField.setLiveUpdate(true);
              searchField.setAppearance("widget");
              searchField.setPlaceholder("type here...");
              searchComposlite.add(searchField, {flex: 1});
@@ -192,15 +191,15 @@ qx.Class.define
              this.add(buttonsRow);
          },
 
-         _runSearch : function(searchPrefix) {
+         _runSearch : function(searchString) {
              this.searchTimerId = null;
-             if( searchPrefix != null &&
-                 searchPrefix.length >= 3 )
+             if( searchString != null &&
+                 searchString.length >= 3 )
              {
                  this.setStatus("Searching...");
 
                  var rpc = spsidgui.SpsidRPC.getInstance();
-                 rpc.search_prefix(
+                 rpc.search_fulltext(
                      function(target, result)
                      {
                          target.setStatus
@@ -221,8 +220,7 @@ qx.Class.define
                      },
                      this,
                      this.getObjclass(),
-                     null,
-                     searchPrefix);
+                     searchString);
              }
          }
      }
