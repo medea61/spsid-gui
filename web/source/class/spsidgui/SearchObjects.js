@@ -31,7 +31,7 @@ qx.Class.define
          initWindow : function() {
              this.setCaption('Search Objects');
              this.setShowStatusbar(true);
-             this.setWidth(800);
+             this.setWidth(1000);
              this.setHeight(600);
          },
          

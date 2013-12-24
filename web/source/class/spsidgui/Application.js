@@ -14,10 +14,11 @@ qx.Class.define
              
              var root = this.getRoot();
              spsidgui.AppWindow.desktop = root;
-             this.addMenuBar(root);
 
              // retrieve SPSID object schema
              spsidgui.Schema.load();
+
+             this.addMenuBar(root);
 
              spsidgui.Application.currObjSelection = {};
          },
@@ -38,28 +39,61 @@ qx.Class.define
                  spsidgui.SearchObjects.openInstance(); });
              part1.add(searchButton);
 
-             var rootButton =
-                 new qx.ui.toolbar.Button("Browse");
-             rootButton.addListener("execute", function() {
-                 var klass = spsidgui.Schema.getRootObjectClass();
-                 if( klass == null ){
+             var browseButton = new qx.ui.toolbar.MenuButton("Browse");
+             var browseMenu = new qx.ui.menu.Menu;
+             browseButton.setMenu(browseMenu);
+             
+             browseMenu.addListener("appear", function(e) {
+                 var menu = e.getTarget();
+                 if( menu.hasChildren() ) {
                      return;
                  }
                  
+                 var rootClass = spsidgui.Schema.getRootObjectClass();
+                 if( rootClass == null ){
+                     return;
+                 }
+
                  var rpc = spsidgui.SpsidRPC.getInstance();
                  rpc.search_objects(
-                     function(target, result) {
-                         if( result.length > 0 ) {
-                             var objID = result[0]['spsid.object.id'];
-                             spsidgui.SpsidObject.getInstance(objID, result[0]);
-
-                             spsidgui.ContainedObjWindow.openInstance(objID);
+                     function(menu, result) {
+                         if( result.length == 0 ) {
+                             return;
                          }
+                         var objID = result[0]['spsid.object.id'];
+
+                         var rpc = spsidgui.SpsidRPC.getInstance();
+                         rpc.contained_classes(
+                             function(menu, result)
+                             {
+                                 for(var i=0; i<result.length; i++) {
+                                     var klass = result[i];
+                                     var schema =
+                                         spsidgui.Schema.getInstance(klass);
+                                     if( schema.hasDisplay() ) {
+                                         var descr = schema.classDescription();
+                                         var but = new qx.ui.menu.Button(descr);
+                                         but.setUserData("objClass", klass);
+                                         but.addListener
+                                         ("execute",
+                                          function(e) {
+                                              var klass =
+                                                  e.getTarget().getUserData(
+                                                      "objClass");
+                                              spsidgui.BrowseWindow.openInstance(
+                                                  klass);
+                                          });
+                                         menu.add(but);
+                                     }
+                                 }
+                             },
+                             menu,
+                             objID);
                      },
-                     {},
-                     'NIL', klass);
+                     menu, 'NIL', rootClass);
              });
-             part1.add(rootButton);
+             
+             part1.add(browseButton);
 
              
              var part2 = new qx.ui.toolbar.Part();

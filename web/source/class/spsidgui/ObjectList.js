@@ -3,192 +3,322 @@ qx.Class.define
  {
      extend : qx.ui.container.Composite, 
      
-     construct : function() {
-
+     construct : function(opts) {
          this.base(arguments);
 
-         this.setLayout(new qx.ui.layout.VBox(5));
+         if( opts != undefined && opts["treeView"] ) {
+             this.setTreeView(true);
+         }
+         
+         this.setLayout(new qx.ui.layout.Grow());
 
-         this.scroll = new qx.ui.container.Scroll();
-         this.contentWidget =
-             new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-         this.scroll.add(this.contentWidget);
+         var splitpane = new qx.ui.splitpane.Pane("horizontal");
 
-         this.add(this.scroll, {flex : 1});
+         var tree = this.tree = new qx.ui.treevirtual.TreeVirtual(
+             [
+                 "Object",
+                 "Description"
+             ]);
+         
+         tree.set({width  : 600, minWidth : 200});
+         if( !this.isTreeView() ) {
+             tree.setStatusBarVisible(false);
+         }
+                  	
+         splitpane.add(tree, 0);                  
+         
+         var rightside = new qx.ui.container.Composite(
+             new qx.ui.layout.VBox(4));
+         rightside.setDecorator("spsid-inset");
+         
+         var buttonsRow = spsidgui.Application.buttonRow();
+
+         var popupButton = this.popupButton =  new qx.ui.form.Button("Popup");
+         popupButton.setEnabled(false);
+         popupButton.setUserData("objlist", this);
+         popupButton.addListener(
+             "execute", function(e) {
+                 var oid = e.getTarget().getUserData("objlist").selectedObjID;
+                 spsidgui.ObjectWindow.openInstance(oid);
+             });
+         buttonsRow.add(popupButton);
+
+         var treeButton = this.treeButton = new qx.ui.form.Button("Tree");
+         treeButton.setEnabled(false);
+         treeButton.setUserData("objlist", this);
+         treeButton.addListener(
+             "execute",
+             function(e) {
+                 var oid = e.getTarget().getUserData("objlist").selectedObjID;
+                 var obj = spsidgui.SpsidObject.getInstance(oid);
+                 spsidgui.TreeBrowserWindow.openInstance(obj);
+             });
+         buttonsRow.add(treeButton);
+
+         var editButton = this.editButton = new qx.ui.form.Button("Edit");
+         editButton.setEnabled(false);
+         editButton.setUserData("objlist", this);
+         editButton.addListener(
+             "execute",
+             function(e) {
+                 var oid = e.getTarget().getUserData("objlist").selectedObjID;
+                 spsidgui.EditObject.openEditInstance(oid);
+             });
+         editButton.setToolTip(new qx.ui.tooltip.ToolTip("Edit this object"));
+         buttonsRow.add(editButton);
+
+         if( this.isTreeView() ) {
+             var addButton = this.addButton = new qx.ui.form.Button("Add");
+             addButton.setEnabled(false);
+             addButton.setUserData("objlist", this);
+             addButton.setUserData("notifyRefresh", this);
+             addButton.addListener(
+                 "execute",
+                 function(e) {
+                     var oid =
+                         e.getTarget().getUserData("objlist").selectedObjID;
+                     var notify = e.getTarget().getUserData("notifyRefresh");
+                     spsidgui.EditObject.openNewObjInstance(oid, notify);
+                 });
+             addButton.setToolTip(new qx.ui.tooltip.ToolTip(
+                 "Add a new contained object"));
+             buttonsRow.add(addButton);
+         }
+
+         var refreshButton = new qx.ui.form.Button("Refresh");
+         refreshButton.setUserData("objlist", this);
+         refreshButton.addListener(
+             "execute", function(e) {
+                 var objlist = e.getTarget().getUserData("objlist");
+                 objlist.refresh();
+             });
+         buttonsRow.add(refreshButton);
+         
+         rightside.add(buttonsRow);
+         
+             
+         this.objDispContainer =
+             new qx.ui.container.Composite(new qx.ui.layout.Grow());
+         this.objDispContainer.set({width  : 300, minWidth : 250});
+         rightside.add(this.objDispContainer);
+             
+         splitpane.add(rightside, 1);             
+         this.add(splitpane);
+
+         tree.addListener(
+             "changeSelection",
+             function(e)
+             {
+                 var removed = this.objDispContainer.removeAll();
+                 for(var i=0; i<removed.length; i++) {
+                     removed[i].dispose();
+                 }
+                 
+                 var node = e.getData()[0];
+                 if( ! node ) {
+                     this.selectedObjID = null;
+                     return;
+                 }
+                 
+                 var objID = node.data.application.objID;
+                 this.selectedObjID = objID;
+                     
+                 var disp = new spsidgui.DisplayObject(objID);
+                 this.objDisp = disp;
+                 
+                 this.objDispContainer.add(disp);
+                 disp.buildContent();
+                     
+                 this.updateButtons();
+                 
+                 // update the global selection information
+                 spsidgui.Application.currObjSelection[
+                     this.toHashCode()] = node.data.application;
+             },
+             this);
+         
      },
 
      properties : {
+         treeView : {
+             check : "Boolean",
+             init : false
+         },
          objectList :  {
-             check: "Array",
+             check : "Array",
              nullable : true
          },
-
-         pageSize : {
-             check : "Integer",
-             init : 10
+         objectID :  {
+             check: "String",
+             nullable : true
          }
      },
      
      members :
      {
-         paginationBar : null,
-         paginationLabel : null,
-         scroll : null,
-         contentWidget : null,
-
-         pagination : null,
-         paginationStart : null,
-         paginationEnd : null,
+         tree : null,
+         objDispContainer : null,
+         objDisp : null,
+         selectedObjID : null,
+         
+         popupButton : null,
+         treeButton : null,
+         editButton : null,
+         addButton : null,
 
          setAttrList : function (list) {
-
-             var objList = new Array;
+             qx.core.Assert.assert(
+                 !this.isTreeView(),
+                 "setAttrList() is called, but this ObjectList is a tree view"
+             );
+                 
+             var objList = new Array();
+             
              for (var i=0; i < list.length; i++) {
                  var attr = list[i];
-                 objList.push(
-                     spsidgui.SpsidObject.getInstance(
-                         attr['spsid.object.id'], attr));
+                 var obj = spsidgui.SpsidObject.getInstance(
+                     attr['spsid.object.id'], attr);
+                 objList.push(obj);
              }
-
-             if( list.length > this.getPageSize() )
-             {
-                 this.pagination = true;
-                 this.paginationStart = 0;
-                 this.paginationEnd = this.getPageSize();
-                 this._addPaginationBar();
-             }
-             else
-             {
-                 this.pagination = false;
-                 this._removePaginationBar();
-             }
-
+             
              this.setObjectList(objList);
              this.refresh();
          },
-         
-         refresh : function () {
-             var removed = this.contentWidget.removeAll();
-             for(var i=0; i<removed.length; i++) {
-                 removed[i].dispose();
-             }
 
-             var list = this.getObjectList();
-             
-             if( list != undefined ) {
-                 if( this.pagination )
-                 {
-                     for (var i=this.paginationStart;
-                          i < this.paginationEnd; i++)
-                     {
-                         this._addObject(list[i]);
-                     }
-
-                     this.paginationLabel.setValue(
-                         "Showing objects " + (this.paginationStart+1) +
-                             " to " + (this.paginationEnd) +
-                             " out of " + list.length);
-                 }
-                 else
-                 {
-                     for (var i=0; i < list.length; i++)
-                     {
-                         this._addObject(list[i]);
-                     }
-                 }                                      
-             }
+         setTopObjectID : function (objID) {
+             qx.core.Assert.assert(
+                 this.isTreeView(),
+                 "setTopObjectID() is called, but this ObjectList is not " +
+                     "a tree view");
+             this.setObjectID(objID);
+             this.refresh();
          },
 
-         _addObject : function (obj) {
-
+         _addObjectToTree : function(dataModel, parentTE, obj) {
+             var schema = obj.getSchema();
+             
+             var label = obj.getObjectName();
+             var descr = obj.getObjectDescr();
+             var klass = obj.getObjClass();
              var objID = obj.getObjectID();
+             var newTE;
              
-             var box = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
-             box.set({appearance: "object-list-item"});
+             if( this.isTreeView() && schema.mayHaveChildren() )
+             {
+                 newTE = dataModel.addBranch(parentTE, label, true);
+             }
+             else
+             {
+                 newTE = dataModel.addLeaf(parentTE, label);
+             }
+             dataModel.setColumnData(newTE, 1, descr);
 
-             var buttonsRow = spsidgui.Application.buttonRow();
-             
-             var name_label = new qx.ui.basic.Label();
-             name_label.set({appearance: "object-list-item-label",
-                             selectable: true});             
-             buttonsRow.add(name_label);
-             buttonsRow.add(new qx.ui.core.Spacer(30));
-
-             var popupButton = new qx.ui.form.Button("Popup");
-             popupButton.setUserData("objID", objID);
-             popupButton.addListener(
-                 "execute", function(e) {
-                     var oid = e.getTarget().getUserData("objID");
-                     spsidgui.ObjectWindow.openInstance(oid);
-                 });
-             buttonsRow.add(popupButton);
-
-             var disp = new spsidgui.DisplayObject(objID, buttonsRow);
-             disp.setNameLabel(name_label);            
-
-             disp.setDestroyOnObjectDelete(box);
-             disp.buildContent();
-             
-             box.add(buttonsRow);             
-             box.add(disp);
-             this.contentWidget.add(box);
+             var node = dataModel.getData()[newTE];             
+             node.data = {"application": {"objID" : objID, "objclass": klass}};
+                      
+             return(newTE);
          },
 
-         _addPaginationBar : function() {
-             if( this.paginationBar ) {
-                 return;
+         
+         _addChildrenToTree : function(dataModel, parentTE, obj) {
+             
+             var te = this._addObjectToTree(dataModel, parentTE, obj);
+
+             var rpc = spsidgui.SpsidRPC.getInstance();
+             
+             rpc.contained_classes(
+                 function(myself, result) {
+                     for(var i=0; i<result.length; i++) {
+                         var klass = result[i];
+                         var schema = spsidgui.Schema.getInstance(klass);
+                         if( schema.hasDisplay() )
+                         {
+                             rpc.search_objects(
+                                 function(x, xresult) {
+                                     for(var j=0; j<xresult.length; j++)
+                                     {
+                                         var o =
+                                             spsidgui.SpsidObject.getInstance(
+                                                 xresult[j]['spsid.object.id'],
+                                                 xresult[j]);
+                                         x[0]._addChildrenToTree(
+                                             x[1], x[2], o);
+                                     }
+                                 },
+                                 [myself, dataModel, te],
+                                 obj.getObjectID(),
+                                 klass);
+                         }
+                     }
+                 },
+                 this,
+                 obj.getObjectID());
+             dataModel.setData();
+         },
+
+
+         refresh : function() {
+             var dataModel = this.tree.getDataModel();
+             dataModel.clearData();
+
+             if( this.isTreeView() ) {
+                 var objID = this.getObjectID();
+                 var obj = spsidgui.SpsidObject.getInstance(objID);
+                 this._addChildrenToTree(dataModel, null, obj);
              }
+             else {
+                 var list = this.getObjectList();
+                 for(var i=0; i<list.length; i++)
+                 {
+                     this._addObjectToTree(dataModel, null, list[i]);
+                 }
+                 dataModel.setData();
+             }
+             
+             this.tree.resetSelection();
+             this.updateButtons();
+         },
+
+         
+         updateButtons : function() {
+             
+             var buttons = {
+                 popupButton : false,
+                 treeButton : false,
+                 editButton : false,
+                 addButton : false
+             };
+
+             var objID = this.selectedObjID;
+             if( objID ) {
                  
-             var buttonsRow = spsidgui.Application.buttonRow();
+                 var obj = spsidgui.SpsidObject.getInstance(objID);
+                 var schema = obj.getSchema();
 
-             var label = this.paginationLabel = new qx.ui.basic.Label();
-             buttonsRow.add(label);
-
-             var prevButton = new qx.ui.form.Button("<<");
-             prevButton.setUserData("ObjectList", this);
-             prevButton.addListener(
-                 "execute", function(e) {
-                     var target = e.getTarget().getUserData("ObjectList");
-                     var pagesize = target.getPageSize();
-                     var arraylen = target.getObjectList().length;
-                     target.paginationStart -= pagesize;
-                     if( target.paginationStart < 0 ) {
-                         target.paginationStart = 0;
+                 if( obj.getReady() ) {
+                     buttons.popupButton = true;
+                     
+                     if( schema.canUseTreeBrowser() )
+                     {
+                         buttons.treeButton = true;
                      }
-                     target.paginationEnd = target.paginationStart + pagesize;
-                     target.refresh();
-                 });
-             buttonsRow.add(prevButton);
-             
-             var nextButton = new qx.ui.form.Button(">>");
-             nextButton.setUserData("ObjectList", this);
-             nextButton.addListener(
-                 "execute", function(e) {
-                     var target = e.getTarget().getUserData("ObjectList");
-                     var pagesize = target.getPageSize();
-                     var arraylen = target.getObjectList().length;
-                     if( target.paginationEnd < arraylen ) {
-                         target.paginationStart = target.paginationEnd;
+                     
+                     if( obj.canAddChildren() ) {
+                         buttons.addButton = true;
                      }
-                     target.paginationEnd += pagesize;
-                     if( target.paginationEnd > arraylen ) {
-                         target.paginationEnd = arraylen;
+                     
+                     if( obj.isEditable() ) {
+                         buttons.editButton = true;
                      }
-                     target.refresh();
-                 });
-             buttonsRow.add(nextButton);
-
-             this.paginationBar = buttonsRow;             
-             this.addAt(buttonsRow, 0);
-         },
-
-         _removePaginationBar : function() {
-             if( this.paginationBar ) {
-                 this.paginationLabel = null;
-                 this.paginationBar = null;
-                 this.removeAt(0);
+                 }
              }
-         }
+
+             for(var b in buttons) {
+                 if( this[b] != undefined ) {
+                     this[b].setEnabled(buttons[b]);
+                 }
+             }
+         }         
      }
  }
 );

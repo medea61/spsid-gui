@@ -136,39 +136,6 @@ qx.Class.define
                      });
                  buttonsRow.add(treeButton);
              }
-             else
-             {
-                 if( ! schema.isRootObject() ) {
-                     var containerButton = new qx.ui.form.Button("Container");
-                     containerButton.setUserData("objID", objID);
-                     containerButton.addListener(
-                         "execute",
-                         function(e) {
-                             var oid = e.getTarget().getUserData("objID");
-                             var obj = spsidgui.SpsidObject.getInstance(oid);
-                             if( obj.getReady() ) {
-                                 var cntr =
-                                     obj.getAttr('spsid.object.container');
-                                 if( cntr != undefined && cntr != 'NIL' ) {
-                                     spsidgui.ObjectWindow.openInstance(cntr);
-                                 }
-                             }
-                         });
-                     buttonsRow.add(containerButton);
-                 }
-
-                 if( schema.mayHaveChildren() ) {
-                     var contentButton = new qx.ui.form.Button("Contents");
-                     contentButton.setUserData("objID", objID);
-                     contentButton.addListener(
-                         "execute",
-                         function(e) {
-                             var oid = e.getTarget().getUserData("objID");
-                             spsidgui.ContainedObjWindow.openInstance(oid);
-                         });
-                     buttonsRow.add(contentButton);
-                 }
-             }
 
              if( obj.isEditable() ) {
                  var editButton = new qx.ui.form.Button("Edit");
