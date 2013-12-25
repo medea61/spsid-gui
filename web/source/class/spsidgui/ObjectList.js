@@ -138,7 +138,19 @@ qx.Class.define
                      this.toHashCode()] = node.data.application;
              },
              this);
-         
+
+         tree.addListener(
+             "dblclick",
+             function(e)
+             {
+                 if( this.treeButton && this.treeButton.isEnabled() ) {
+                     var oid = this.selectedObjID;
+                     var obj = spsidgui.SpsidObject.getInstance(oid);
+                     spsidgui.TreeBrowserWindow.openInstance(obj);
+                 }
+             },
+             this);
+
      },
 
      properties : {
