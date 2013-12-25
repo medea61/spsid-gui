@@ -129,24 +129,29 @@ qx.Class.define
                      }
                                           
                      searchTimerId = searchTimer.start(
-                         function(userData)
+                         function(searchStr)
                          {
                              searchTimerId = null;
-                             if( userData != null && userData.length >= 3 )
+                             if( searchStr != null && searchStr.length >= 3 )
                              {
                                  statusBar.setStatus("Searching...");
                                  var sel = classList.getSelection().getItem(0);
-                                 rpc.search_fulltext(
-                                     function(target, result)
-                                     {
-                                         statusBar.setStatus
-                                         ("Found " + result.length +
-                                          " objects");
-                                         resultsWidget.setAttrList(result);
-                                     },
-                                     {},
-                                     sel.getClassName(),
-                                     userData);
+                                 var klass = sel.getClassName();
+                                 
+                                 resultsWidget.setRetrieveListFunc(
+                                     function(callback) {
+                                         rpc.search_fulltext(
+                                             function(target, result)
+                                             {
+                                                 statusBar.setStatus
+                                                 ("Found " + result.length +
+                                                  " objects");
+                                                 callback(result);
+                                             },
+                                             {},
+                                             klass,
+                                             searchStr);
+                                     });
                              }
                          },
                          0,
@@ -155,7 +160,6 @@ qx.Class.define
                          200);
                  });                             
              
-
              // generate a refresh if classList value is changed
              classList.getSelection().addListener(
                  "change", 

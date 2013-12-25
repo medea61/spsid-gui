@@ -50,9 +50,10 @@ qx.Class.define
          _edit_instances : {},
          _newobj_instance : null,
          
-         openEditInstance : function(objID) {
-             if( spsidgui.EditObject._edit_instances[objID] == undefined ) {
-                 var w = new spsidgui.EditObject(objID);
+         openEditInstance : function(objID, notifyRefresh) {
+             var w = spsidgui.EditObject._edit_instances[objID];
+             if( w == undefined ) {
+                 w = new spsidgui.EditObject(objID);
                  spsidgui.EditObject._edit_instances[objID] = w;
                  
                  w.addListener('close', function(e) {
@@ -64,12 +65,12 @@ qx.Class.define
                  }, w);
              }
              else {
-                 spsidgui.EditObject._edit_instances[objID].open();
+                 w.open();
              }
 
-             spsidgui.EditObject._edit_instances[objID].setStatus(
-                 "Edit or add object attributes");
-             return(spsidgui.EditObject._edit_instances[objID]);
+             w.notifyRefresh = notifyRefresh;
+             w.setStatus("Edit or add object attributes");
+             return(w);
          },
 
          openNewObjInstance : function(containerID, notifyRefresh) {

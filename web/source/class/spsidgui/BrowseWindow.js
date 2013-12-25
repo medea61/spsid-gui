@@ -59,16 +59,19 @@ qx.Class.define
              var statusBar = this;
 
              var rpc = spsidgui.SpsidRPC.getInstance();
-             rpc.search_objects(
-                 function(objlist, result) {
-                     if( result.length == 0 ) {
-                         return;
-                     }
-                     statusBar.setStatus
-                     ("Found " + result.length + " objects");
-                     objlist.setAttrList(result);
-                 },
-                 resultsWidget, null, klass);
+             resultsWidget.setRetrieveListFunc(
+                 function(callback) {
+                     rpc.search_objects(
+                         function(target, result) {
+                             if( result.length == 0 ) {
+                                 return;
+                             }
+                             statusBar.setStatus
+                             ("Found " + result.length + " objects");
+                             callback(result);
+                         },
+                         {}, null, klass);
+                 });
          }
      }
  });

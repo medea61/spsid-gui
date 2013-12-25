@@ -58,11 +58,13 @@ qx.Class.define
          var editButton = this.editButton = new qx.ui.form.Button("Edit");
          editButton.setEnabled(false);
          editButton.setUserData("objlist", this);
+         editButton.setUserData("notifyRefresh", this);
          editButton.addListener(
              "execute",
              function(e) {
                  var oid = e.getTarget().getUserData("objlist").selectedObjID;
-                 spsidgui.EditObject.openEditInstance(oid);
+                 var notify = e.getTarget().getUserData("notifyRefresh");
+                 spsidgui.EditObject.openEditInstance(oid, notify);
              });
          editButton.setToolTip(new qx.ui.tooltip.ToolTip("Edit this object"));
          buttonsRow.add(editButton);
@@ -160,12 +162,23 @@ qx.Class.define
          objDispContainer : null,
          objDisp : null,
          selectedObjID : null,
+         retrieveListFunc : null,
          
          popupButton : null,
          treeButton : null,
          editButton : null,
          addButton : null,
 
+
+         setRetrieveListFunc : function(handler) {
+             qx.core.Assert.assert(
+                 !this.isTreeView(),
+                 "setRetrieveListFunc() is called, but " +
+                     "this ObjectList is a tree view");
+             this.retrieveListFunc = handler;
+             this.refresh();
+         },
+             
          setAttrList : function (list) {
              qx.core.Assert.assert(
                  !this.isTreeView(),
@@ -182,7 +195,9 @@ qx.Class.define
              }
              
              this.setObjectList(objList);
-             this.refresh();
+             if( this.retrieveListFunc == undefined ) {
+                 this.refresh();
+             }
          },
 
          setTopObjectID : function (objID) {
@@ -267,12 +282,28 @@ qx.Class.define
                  this._addChildrenToTree(dataModel, null, obj);
              }
              else {
-                 var list = this.getObjectList();
-                 for(var i=0; i<list.length; i++)
-                 {
-                     this._addObjectToTree(dataModel, null, list[i]);
+                 var myself = this;
+                                              
+                 var setDataCallback = function() {                     
+                     var list = myself.getObjectList();
+                     for(var i=0; i<list.length; i++)
+                     {
+                         myself._addObjectToTree(dataModel, null, list[i]);
+                     }
+                     dataModel.setData();
+                 };
+
+                 var setAttrListCallback = function(attrList) {
+                     myself.setAttrList(attrList);
+                     setDataCallback();
+                 };
+                                          
+                 if( this.retrieveListFunc != undefined ) {
+                     this.retrieveListFunc(setAttrListCallback);
                  }
-                 dataModel.setData();
+                 else {
+                     setDataCallback();
+                 }
              }
              
              this.tree.resetSelection();
