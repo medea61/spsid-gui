@@ -120,7 +120,7 @@ qx.Class.define
                      {
                          if( val.length > 0 && descr.length > 0 )
                          {
-                             descr += ' ';
+                             descr += ' | ';
                          }
                          descr += val;
                      }
