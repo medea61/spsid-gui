@@ -7,7 +7,7 @@ qx.Theme.define
      {
          "button-row" :
          {
-             decorator : qx.ui.decoration.Uniform,
+             decorator : qx.ui.decoration.Decorator,
              style :
              {
                  backgroundColor : "#e6e6e6"
@@ -26,12 +26,12 @@ qx.Theme.define
 
          "object-list-item-label" :
          {
-             decorator : qx.ui.decoration.Uniform             
+             decorator : qx.ui.decoration.Decorator
          },
          
          "spsid-inset" :
          {
-             decorator : qx.ui.decoration.Uniform,
+             decorator : qx.ui.decoration.Decorator,
              style :
              {
                  width : 1,

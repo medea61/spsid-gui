@@ -29,7 +29,7 @@ qx.Class.define('spsidgui.SpsidRPC', {
                 };
 
             req.setRequestData(qx.lang.Json.stringify(rpcData));
-            req.setParser(qx.io.request.Xhr.PARSER["json"]);
+            req.setParser("json");
             req.setUserData("SpsidRPC.target", target);
             req.addListener("success", function(e) {
                 var req = e.getTarget();
