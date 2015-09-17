@@ -113,7 +113,7 @@ qx.Class.define
          },
 
          hasDisplay : function() {
-             return(this.getSchema()['display'] != undefined);
+             return(('display' in this.getSchema()) ? true:false);
          },
 
          classDescription : function() {
