@@ -43,12 +43,16 @@ AC_MSG_RESULT([Ok])
 
 AC_MSG_CHECKING([validity of PYTHON (${PYTHON})])
 if test ${PYTHON} = no -o ! -x ${PYTHON}; then
-  AC_MSG_ERROR([Qooxdoo SDK requires a valid Python 2.6 interpreter])
+  AC_MSG_ERROR([Qooxdoo SDK requires a valid Python 2.6++ interpreter])
 fi
 if (${PYTHON} -V 2>&1 | ${EGREP} -q '^Python 2\.6'); then
   AC_MSG_RESULT([Ok])
 else
-  AC_MSG_ERROR([Python version 2.6 is required])
+  if (${PYTHON} -V 2>&1 | ${EGREP} -q '^Python 2\.7'); then
+    AC_MSG_RESULT([Ok])
+  else
+    AC_MSG_ERROR([Python version 2.6++ is required])
+  fi
 fi
 
 
